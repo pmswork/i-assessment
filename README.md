@@ -47,7 +47,7 @@ Build a small planning application, in **Python and/or JavaScript/TypeScript**
 Upload (or otherwise ingest) the two CSV files, and produce a proposed plan:
 which interpreter takes which job.
 
-Not every job will be assignable. For every job you cannot place, the plan
+It's possible that not every job is assignable. For every job you cannot place, the plan
 must say **why not** — a reason a human planner could act on, not just
 "unassigned".
 
