@@ -63,8 +63,7 @@ the manual assignment:
 - if it can't work → reject it, and say why
 
 What counts as "fine", "questionable", or "can't work" is **yours to define
-and defend** — that is a core part of this assignment. Real planning software
-lives or dies by these rules, and we deliberately don't spell them out.
+and defend**.
 
 ## Deliverables
 
