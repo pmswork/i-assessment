@@ -1,0 +1,9 @@
+interpreter_id,name,language,sworn,home_city,home_lat,home_lon,rate_eur_per_hour,availability_2026-07-14,availability_2026-07-15
+INT-01,Amira El-Sayed,Arabic,yes,Amsterdam,52.3731,4.8925,65,08:00-18:00,08:00-18:00
+INT-02,Karim Haddad,Arabic,no,Rotterdam,51.9244,4.4778,48,08:00-18:00,08:00-18:00
+INT-03,Layla Nasser,Arabic,no,Utrecht,52.0907,5.1216,50,08:00-18:00,08:00-18:00
+INT-04,Oksana Kovalenko,Ukrainian,yes,Den Haag,52.0749,4.2697,62,08:00-18:00,08:00-18:00
+INT-05,Dmytro Bondar,Ukrainian,no,Amsterdam,52.3731,4.8925,45,08:00-18:00,08:00-14:00
+INT-06,Emre Yilmaz,Turkish,yes,Rotterdam,51.9244,4.4778,60,08:00-18:00,08:00-18:00
+INT-07,Selin Demir,Turkish,no,Eindhoven,51.4393,5.4786,46,13:00-18:00,08:00-18:00
+INT-08,Piotr Nowak,Polish,no,Utrecht,52.0907,5.1216,47,08:00-18:00,08:00-18:00

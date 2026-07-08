@@ -1,0 +1,111 @@
+job_id,date,start_time,duration_min,end_time,language,sworn_required,modality,client,address,city,lat,lon
+J001,2026-07-14,08:15,30,08:45,Arabic,no,remote,Jeugdzorg – beeldbellen,,,,
+J002,2026-07-14,08:25,45,09:10,Ukrainian,no,on-site,Ziekenhuis Den Haag – polikliniek,"Kerkplein 103, Den Haag",Den Haag,52.0749,4.2697
+J003,2026-07-14,08:25,30,08:55,Ukrainian,no,remote,Jeugdzorg – beeldbellen,,,,
+J004,2026-07-14,08:25,45,09:10,Polish,no,remote,Jeugdzorg – beeldbellen,,,,
+J005,2026-07-14,08:30,75,09:45,Arabic,no,on-site,Gemeente Utrecht – Sociale Dienst,"Nieuwe Gracht 16, Utrecht",Utrecht,52.0907,5.1216
+J006,2026-07-14,08:45,45,09:30,Arabic,no,on-site,Gemeente Amsterdam – Sociale Dienst,"Beatrixlaan 40, Amsterdam",Amsterdam,52.3731,4.8925
+J007,2026-07-14,09:00,150,11:30,Turkish,yes,on-site,Rechtbank Rotterdam – zitting,"Stationsstraat 24, Rotterdam",Rotterdam,51.9244,4.4778
+J008,2026-07-14,09:15,150,11:45,Arabic,no,on-site,Franciscus Gasthuis – polikliniek,"Kerkplein 95, Schiedam",Schiedam,51.9172,4.4019
+J009,2026-07-14,09:20,30,09:50,Ukrainian,no,remote,GGD – telefonisch consult,,,,
+J010,2026-07-14,09:30,90,11:00,Turkish,yes,on-site,Rechtbank Zeeland-West-Brabant – zitting,"Molenweg 6, Breda",Breda,51.5888,4.776
+J011,2026-07-14,09:45,60,10:45,Polish,no,on-site,Gemeente Utrecht – Sociale Dienst,"Oranjelaan 151, Utrecht",Utrecht,52.0907,5.1216
+J012,2026-07-14,10:00,45,10:45,Arabic,no,on-site,COA opvanglocatie – intake,"Prins Hendrikkade 14, Amsterdam",Amsterdam,52.3731,4.8925
+J013,2026-07-14,10:00,60,11:00,Polish,yes,on-site,Rechtbank Midden-Nederland – zitting,"Dorpsstraat 53, Utrecht",Utrecht,52.0907,5.1216
+J014,2026-07-14,10:15,45,11:00,Ukrainian,no,on-site,UWV WERKbedrijf – gesprek,"Wilhelminalaan 121, Zaandam",Zaandam,52.4425,4.8299
+J015,2026-07-14,10:25,45,11:10,Ukrainian,no,on-site,Gemeente Haarlem – Sociale Dienst,"Wilhelminalaan 153, Haarlem",Haarlem,52.3885,4.6388
+J016,2026-07-14,10:30,120,12:30,Arabic,no,on-site,UMC Utrecht – polikliniek,"Dorpsstraat 56, Utrecht",Utrecht,52.0907,5.1216
+J017,2026-07-14,11:00,60,12:00,Arabic,no,on-site,Gemeente Rotterdam – Sociale Dienst,"Molenweg 32, Rotterdam",Rotterdam,51.9244,4.4778
+J018,2026-07-14,11:15,30,11:45,Ukrainian,no,remote,Jeugdzorg – beeldbellen,,,,
+J019,2026-07-14,11:35,30,12:05,Polish,no,on-site,Gemeente Amersfoort – Sociale Dienst,"Stationsstraat 36, Amersfoort",Amersfoort,52.1638,5.4089
+J020,2026-07-14,11:45,60,12:45,Ukrainian,no,on-site,Ziekenhuis Haarlem – polikliniek,"Wilhelminalaan 142, Haarlem",Haarlem,52.3885,4.6388
+J021,2026-07-14,12:00,60,13:00,Arabic,no,on-site,GGD – spreekuur asielzoekers,"Kerkplein 139, Amsterdam",Amsterdam,52.3731,4.8925
+J022,2026-07-14,12:05,45,12:50,Turkish,yes,on-site,Rechtbank Rotterdam – zitting,"Kerkplein 69, Rotterdam",Rotterdam,51.9244,4.4778
+J023,2026-07-14,12:10,30,12:40,Ukrainian,no,remote,Gemeente – videogesprek,,,,
+J024,2026-07-14,12:15,60,13:15,Arabic,no,on-site,ISK taalschool – oudergesprek,"Dorpsstraat 73, Schiedam",Schiedam,51.9172,4.4019
+J025,2026-07-14,12:20,30,12:50,Polish,no,remote,Jeugdzorg – beeldbellen,,,,
+J026,2026-07-14,13:05,30,13:35,Arabic,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Dorpsstraat 94, Utrecht",Utrecht,52.0907,5.1216
+J027,2026-07-14,13:10,90,14:40,Ukrainian,no,on-site,COA opvanglocatie – intake,"Prins Hendrikkade 51, Haarlem",Haarlem,52.3885,4.6388
+J028,2026-07-14,13:15,60,14:15,Ukrainian,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Beatrixlaan 83, Zaandam",Zaandam,52.4425,4.8299
+J029,2026-07-14,13:15,30,13:45,Arabic,no,remote,Gemeente – videogesprek,,,,
+J030,2026-07-14,13:20,60,14:20,Turkish,no,on-site,UWV WERKbedrijf – gesprek,"Nieuwe Gracht 35, Rotterdam",Rotterdam,51.9244,4.4778
+J031,2026-07-14,13:25,30,13:55,Turkish,no,remote,Jeugdzorg – beeldbellen,,,,
+J032,2026-07-14,13:30,90,15:00,Polish,no,on-site,Gemeente Amersfoort – wijkteam,"Prins Hendrikkade 109, Amersfoort",Amersfoort,52.1638,5.4089
+J033,2026-07-14,14:00,60,15:00,Polish,no,on-site,COA opvanglocatie – intake,"Julianaweg 23, Nijmegen",Nijmegen,51.8475,5.8638
+J034,2026-07-14,14:00,45,14:45,Arabic,no,remote,GGD – telefonisch consult,,,,
+J035,2026-07-14,14:00,30,14:30,Arabic,no,remote,Huisartsenpraktijk – telefonisch tolken,,,,
+J036,2026-07-14,14:10,90,15:40,Arabic,no,on-site,ISK taalschool – oudergesprek,"Beatrixlaan 99, Leiden",Leiden,52.1595,4.4909
+J037,2026-07-14,14:10,45,14:55,Turkish,no,remote,Jeugdzorg – beeldbellen,,,,
+J038,2026-07-14,14:35,30,15:05,Ukrainian,no,remote,Huisartsenpraktijk – telefonisch tolken,,,,
+J039,2026-07-14,14:45,30,15:15,Turkish,no,remote,GGD – telefonisch consult,,,,
+J040,2026-07-14,15:05,45,15:50,Ukrainian,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Nieuwe Gracht 85, Haarlem",Haarlem,52.3885,4.6388
+J041,2026-07-14,15:15,30,15:45,Turkish,no,remote,Gemeente – videogesprek,,,,
+J042,2026-07-14,15:20,60,16:20,Arabic,no,on-site,Ziekenhuis Gouda – polikliniek,"Wilhelminalaan 93, Gouda",Gouda,52.0115,4.7106
+J043,2026-07-14,15:30,30,16:00,Arabic,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Beatrixlaan 26, Haarlem",Haarlem,52.3885,4.6388
+J044,2026-07-14,15:45,45,16:30,Turkish,no,on-site,UWV WERKbedrijf – gesprek,"Dorpsstraat 54, Rotterdam",Rotterdam,51.9244,4.4778
+J045,2026-07-14,16:00,45,16:45,Ukrainian,no,on-site,UWV WERKbedrijf – gesprek,"Dorpsstraat 18, Almere",Almere,52.3705,5.2186
+J046,2026-07-14,16:00,30,16:30,Turkish,no,remote,Huisartsenpraktijk – telefonisch tolken,,,,
+J047,2026-07-14,16:05,45,16:50,Arabic,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Oranjelaan 61, Leiden",Leiden,52.1595,4.4909
+J048,2026-07-14,16:10,30,16:40,Ukrainian,no,remote,GGD – telefonisch consult,,,,
+J049,2026-07-14,16:50,30,17:20,Polish,no,on-site,GGD – spreekuur asielzoekers,"Sportlaan 123, Schiedam",Schiedam,51.9172,4.4019
+J050,2026-07-14,16:55,45,17:40,Turkish,no,remote,Gemeente – videogesprek,,,,
+J051,2026-07-14,17:00,45,17:45,Arabic,no,on-site,ISK taalschool – oudergesprek,"Beatrixlaan 121, Zoetermeer",Zoetermeer,52.0623,4.4878
+J052,2026-07-14,17:00,30,17:30,Ukrainian,no,remote,GGD – telefonisch consult,,,,
+J053,2026-07-14,17:05,30,17:35,Turkish,no,on-site,UWV WERKbedrijf – gesprek,"Marktstraat 93, Eindhoven",Eindhoven,51.4393,5.4786
+J054,2026-07-14,17:15,45,18:00,Ukrainian,no,on-site,Gemeente Haarlem – Sociale Dienst,"Molenweg 48, Haarlem",Haarlem,52.3885,4.6388
+J055,2026-07-14,17:15,45,18:00,Arabic,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Nieuwe Gracht 51, Schiedam",Schiedam,51.9172,4.4019
+J056,2026-07-14,17:15,30,17:45,Arabic,no,remote,Huisartsenpraktijk – telefonisch tolken,,,,
+J057,2026-07-14,19:30,60,20:30,Arabic,no,remote,Huisartsenpost – telefonisch tolken,,,,
+J058,2026-07-15,08:15,30,08:45,Arabic,no,remote,Huisartsenpraktijk – telefonisch tolken,,,,
+J059,2026-07-15,08:15,30,08:45,Turkish,no,remote,GGD – telefonisch consult,,,,
+J060,2026-07-15,08:15,30,08:45,Polish,no,remote,Gemeente – videogesprek,,,,
+J061,2026-07-15,08:30,45,09:15,Arabic,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Kerkplein 149, Amsterdam",Amsterdam,52.3731,4.8925
+J062,2026-07-15,08:30,60,09:30,Turkish,no,on-site,GGD – spreekuur asielzoekers,"Marktstraat 151, Eindhoven",Eindhoven,51.4393,5.4786
+J063,2026-07-15,08:45,45,09:30,Arabic,no,on-site,Wijkteam Jeugd – huisbezoek,"Beatrixlaan 9, Amersfoort",Amersfoort,52.1638,5.4089
+J064,2026-07-15,09:00,60,10:00,Ukrainian,no,on-site,ISK taalschool – oudergesprek,"Prins Hendrikkade 17, Leiden",Leiden,52.1595,4.4909
+J065,2026-07-15,09:00,60,10:00,Turkish,no,on-site,Gemeente Maastricht – Sociale Dienst,"Molenweg 70, Maastricht",Maastricht,50.858,5.697
+J066,2026-07-15,09:10,90,10:40,Polish,no,on-site,Wijkteam Jeugd – huisbezoek,"Molenweg 99, Utrecht",Utrecht,52.0907,5.1216
+J067,2026-07-15,09:10,45,09:55,Turkish,no,remote,Gemeente – videogesprek,,,,
+J068,2026-07-15,09:25,60,10:25,Arabic,no,on-site,Gemeente Zoetermeer – Sociale Dienst,"Molenweg 145, Zoetermeer",Zoetermeer,52.0623,4.4878
+J069,2026-07-15,09:35,30,10:05,Arabic,no,remote,Jeugdzorg – beeldbellen,,,,
+J070,2026-07-15,09:50,30,10:20,Turkish,no,remote,GGD – telefonisch consult,,,,
+J071,2026-07-15,10:00,45,10:45,Arabic,no,on-site,Ziekenhuis Amersfoort – polikliniek,"Molenweg 91, Amersfoort",Amersfoort,52.1638,5.4089
+J072,2026-07-15,10:00,60,11:00,Ukrainian,no,on-site,Gemeente Amersfoort – spreekuur statushouders,"Kerkplein 63, Amersfoort",Amersfoort,52.1638,5.4089
+J073,2026-07-15,10:20,30,10:50,Arabic,no,remote,Jeugdzorg – beeldbellen,,,,
+J074,2026-07-15,10:55,60,11:55,Arabic,no,on-site,ISK taalschool – oudergesprek,"Stationsstraat 50, Zoetermeer",Zoetermeer,52.0623,4.4878
+J075,2026-07-15,11:05,90,12:35,Turkish,no,on-site,ISK taalschool – oudergesprek,"Oranjelaan 128, Utrecht",Utrecht,52.0907,5.1216
+J076,2026-07-15,11:05,30,11:35,Polish,no,remote,GGD – telefonisch consult,,,,
+J077,2026-07-15,11:10,30,11:40,Arabic,no,remote,Jeugdzorg – beeldbellen,,,,
+J078,2026-07-15,11:15,30,11:45,Arabic,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Molenweg 52, Amersfoort",Amersfoort,52.1638,5.4089
+J079,2026-07-15,11:15,30,11:45,Ukrainian,no,remote,GGD – telefonisch consult,,,,
+J080,2026-07-15,11:25,60,12:25,Turkish,no,on-site,Gemeente Tilburg – Sociale Dienst,"Kerkplein 69, Tilburg",Tilburg,51.5856,5.0661
+J081,2026-07-15,11:30,60,12:30,Ukrainian,no,on-site,Gemeente Den Haag – Sociale Dienst,"Nieuwe Gracht 33, Den Haag",Den Haag,52.0749,4.2697
+J082,2026-07-15,11:30,60,12:30,Arabic,no,on-site,Gemeente Groningen – Sociale Dienst,"Julianaweg 119, Groningen",Groningen,53.2191,6.568
+J083,2026-07-15,12:05,30,12:35,Ukrainian,no,remote,Jeugdzorg – beeldbellen,,,,
+J084,2026-07-15,12:10,60,13:10,Polish,no,on-site,COA opvanglocatie – intake,"Beatrixlaan 67, Utrecht",Utrecht,52.0907,5.1216
+J085,2026-07-15,12:10,30,12:40,Arabic,no,remote,Gemeente – videogesprek,,,,
+J086,2026-07-15,12:15,60,13:15,Arabic,no,on-site,Ziekenhuis Amsterdam – polikliniek,"Beatrixlaan 91, Amsterdam",Amsterdam,52.3731,4.8925
+J087,2026-07-15,12:30,60,13:30,Arabic,no,on-site,UMC Utrecht – polikliniek,"Stationsstraat 149, Utrecht",Utrecht,52.0907,5.1216
+J088,2026-07-15,12:50,30,13:20,Turkish,no,on-site,ISK taalschool – oudergesprek,"Stationsstraat 78, Tilburg",Tilburg,51.5856,5.0661
+J089,2026-07-15,13:05,30,13:35,Arabic,no,remote,GGD – telefonisch consult,,,,
+J090,2026-07-15,13:35,30,14:05,Turkish,no,remote,Gemeente – videogesprek,,,,
+J091,2026-07-15,13:45,60,14:45,Polish,no,on-site,COA opvanglocatie – intake,"Stationsstraat 125, Utrecht",Utrecht,52.0907,5.1216
+J092,2026-07-15,13:50,45,14:35,Arabic,no,remote,GGD – telefonisch consult,,,,
+J093,2026-07-15,14:00,90,15:30,Turkish,yes,on-site,Rechtbank Tilburg – zitting,"Beatrixlaan 52, Tilburg",Tilburg,51.5856,5.0661
+J094,2026-07-15,14:05,60,15:05,Arabic,no,on-site,Gemeente Amersfoort – Sociale Dienst,"Nieuwe Gracht 103, Amersfoort",Amersfoort,52.1638,5.4089
+J095,2026-07-15,14:20,30,14:50,Arabic,no,on-site,Wijkteam Jeugd – huisbezoek,"Sportlaan 18, Utrecht",Utrecht,52.0907,5.1216
+J096,2026-07-15,14:30,120,16:30,Ukrainian,yes,on-site,IND – gehoor,"Kerkplein 143, Den Haag",Den Haag,52.0749,4.2697
+J097,2026-07-15,15:00,60,16:00,Ukrainian,no,on-site,Vluchtelingenwerk – begeleidingsgesprek,"Kerkplein 131, Rotterdam",Rotterdam,51.9244,4.4778
+J098,2026-07-15,15:05,45,15:50,Polish,no,remote,GGD – telefonisch consult,,,,
+J099,2026-07-15,15:10,45,15:55,Arabic,no,on-site,ISK taalschool – oudergesprek,"Wilhelminalaan 66, Zoetermeer",Zoetermeer,52.0623,4.4878
+J100,2026-07-15,15:15,60,16:15,Turkish,no,on-site,Ziekenhuis Dordrecht – polikliniek,"Sportlaan 128, Dordrecht",Dordrecht,51.8144,4.6692
+J101,2026-07-15,15:15,30,15:45,Arabic,no,remote,Jeugdzorg – beeldbellen,,,,
+J102,2026-07-15,15:25,45,16:10,Arabic,no,remote,GGD – telefonisch consult,,,,
+J103,2026-07-15,16:05,45,16:50,Arabic,no,remote,Huisartsenpraktijk – telefonisch tolken,,,,
+J104,2026-07-15,16:25,90,17:55,Polish,no,on-site,UWV WERKbedrijf – gesprek,"Molenweg 121, Utrecht",Utrecht,52.0907,5.1216
+J105,2026-07-15,16:30,30,17:00,Arabic,no,on-site,GGD – spreekuur asielzoekers,"Molenweg 121, Zoetermeer",Zoetermeer,52.0623,4.4878
+J106,2026-07-15,16:35,60,17:35,Turkish,no,on-site,Gemeente Eindhoven – Sociale Dienst,"Wilhelminalaan 5, Eindhoven",Eindhoven,51.4393,5.4786
+J107,2026-07-15,16:35,30,17:05,Arabic,no,remote,Jeugdzorg – beeldbellen,,,,
+J108,2026-07-15,16:40,45,17:25,Turkish,no,remote,Gemeente – videogesprek,,,,
+J109,2026-07-15,17:10,30,17:40,Arabic,no,remote,Gemeente – videogesprek,,,,
+J110,2026-07-15,17:30,30,18:00,Arabic,no,on-site,Ziekenhuis Zoetermeer – polikliniek,"Sportlaan 69, Zoetermeer",Zoetermeer,52.0623,4.4878
