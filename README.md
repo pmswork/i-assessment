@@ -1,14 +1,14 @@
 # Interpreter Planning — Technical Assessment
 
-Welcome! This is a weekend take-home assignment. It's built around a real problem
+Welcome! This is a take-home assignment. It's built around a real problem
 we deal with every day at ELAN: getting the right interpreter to the right job.
 
 ## Scenario
 
-We run an interpreting agency. Public-sector clients — municipalities, courts,
+Public-sector clients — municipalities, courts,
 hospitals, the immigration service — book interpreters for appointments across
 the Netherlands. Some appointments are on location, some are remote (phone or
-video). Some require a **sworn** (beëdigd) interpreter, e.g. court hearings.
+video). Some require a sworn (beëdigd) interpreter, e.g. court hearings.
 
 You are given two days of bookings and our interpreter roster:
 
@@ -39,31 +39,27 @@ You are given two days of bookings and our interpreter roster:
 
 ## The assignment
 
-Build a small planning application, in **Python and/or JavaScript/TypeScript**
-(any frameworks/libraries you like), with two capabilities:
+Build a small planning application, in **Python and/or JavaScript/TypeScript** (any frameworks/libraries you like), with two capabilities:
 
 ### 1. Auto-assignment
 
-Upload (or otherwise ingest) the two CSV files, and produce a proposed plan:
-which interpreter takes which job.
+Upload (or otherwise ingest) the two CSV files, and produce a proposed schedule: which interpreter takes which job.
 
 It's possible that not every job is assignable. For every job you cannot place, the plan
-must say **why not** — a reason a human planner could act on, not just
-"unassigned".
+must say **why not** — a reason a human planner could act on, not just "unassigned".
 
 ### 2. Manual assignment with validation
 
-In practice, planners often override the machine: a client asks for a specific
-interpreter, or plans change mid-day. Build a simple web interface where a
-planner can **manually assign an interpreter to a job**. The app must validate
-the manual assignment:
+In practice, we often hold a first-come-first-serve type of auction for interpreters where the first interpreter to accept a job gets assigned. 
+Sometimes those interpreters just hit accept without checking whether or not they can actually serve the job.
+Build a simple web interface where a planner can **manually assign an interpreter to a job**. 
+The app must validate the manual assignment:
 
 - if it's fine → accept it
 - if it's questionable → warn, but allow the planner to proceed
 - if it can't work → reject it, and say why
 
-What counts as "fine", "questionable", or "can't work" is **yours to define
-and defend**.
+What counts as "fine", "questionable", or "can't work" is **yours to define and defend**.
 
 ## Deliverables
 
@@ -79,28 +75,22 @@ and defend**.
 ## What we look at
 
 - **Judgment** — did you model the problem the business actually has?
-- **Decisions** — where the assignment is ambiguous (it is, on purpose),
-  did you make a call and explain it?
-- **Working software** — a small thing that runs beats a big thing that almost
-  runs. We will run it.
+- **Decisions** — where the assignment is ambiguous, did you make a call and explain it?
+- **Working software** — a small thing that runs beats a big thing that almost runs.
 - **Code** we can read.
 
-We do *not* grade: visual polish, algorithmic sophistication (a sensible
-heuristic beats a solver you can't explain), or completeness of edge-case
-handling — flag what you'd do rather than doing it all.
+We do *not* grade: algorithmic sophistication or completeness of edge-case handling — flag what you'd do rather than doing it all.
 
 ## Practicalities
 
-- Timebox: this is designed for roughly **6–10 focused hours**. Please don't
-  sink your whole weekend into gold-plating; we'd rather see where you chose
-  to spend limited time.
-- The data is synthetic but shaped like our real workload. Coordinates are
-  city centroids; addresses are fictional.
-- If you want additional data, infrastructure, or clarification — **ask**.
-  Asking good questions is part of the job. (For example: we can provide a
-  travel-time matrix between cities on request.)
-- LLM/AI tooling: use whatever you normally use. We care about the result and
-  whether you can defend every decision in it — you'll walk us through your
-  solution in the follow-up conversation.
+- Timebox: depending on your toolset and approach this could be **2–6 focused hours** of work. Please don't sink your whole weekend into gold-plating; we'd rather see where you chose to spend limited time.
+- The data is synthetic but shaped like our real workload.
+- If you want additional data, infrastructure, or clarification — **ask**. You might not get an answer that solves your question, but it shows your thought process.
+- LLM/AI tooling: use whatever you normally use. We care about the result and whether you can defend every decision in it. We explicitly encourage the use of claude code, cursor or other tools
+- You'll walk us through your solution in the follow-up conversation
 
-Good luck — we're looking forward to seeing how you think.
+This is an arbitrarily large assignment with ambiguous instructions and data by design.
+We don't expect a production grade solution, but a MVP that works for the important core principles.
+You don't have to be "done" to successfully master this assignment.
+
+Good luck and have fun!
