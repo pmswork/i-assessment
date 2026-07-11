@@ -27,7 +27,7 @@ class Settings:
     travel_buffer_min: float = 15.0
     long_distance_km: float = 40.0
     workload_imbalance_threshold_min: float = 120.0
-    coverage_radius_km: float = 50.0
+    coverage_radius_km: float = 100.0
     coverage_bar_cap: int = 3
 
 

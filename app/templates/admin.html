@@ -14,9 +14,14 @@
 <section class="panel">
   <div class="panel-heading"><h2>Jobs</h2></div>
   <div class="panel-body">
-    <div class="action-row">
-      <form method="post" action="/admin/import/jobs" enctype="multipart/form-data" class="inline">
-        <input type="file" name="file" accept=".csv" required>
+    <div class="admin-tools">
+      <form method="post" action="/admin/import/jobs" enctype="multipart/form-data" class="import-form">
+        <input class="file-input-native" type="file" name="file" id="jobs-file" accept=".csv" required
+               data-file-name-target="jobs-file-name">
+        <div class="file-picker">
+          <label class="file-trigger" for="jobs-file">Choose File</label>
+          <span class="file-name" id="jobs-file-name">No file chosen</span>
+        </div>
         <button type="submit" class="secondary">Import jobs.csv</button>
       </form>
       <a class="button-link secondary" href="/admin/export/jobs.csv">Export jobs.csv</a>
@@ -65,9 +70,14 @@
 <section class="panel">
   <div class="panel-heading"><h2>Interpreters</h2></div>
   <div class="panel-body">
-    <div class="action-row">
-      <form method="post" action="/admin/import/interpreters" enctype="multipart/form-data" class="inline">
-        <input type="file" name="file" accept=".csv" required>
+    <div class="admin-tools">
+      <form method="post" action="/admin/import/interpreters" enctype="multipart/form-data" class="import-form">
+        <input class="file-input-native" type="file" name="file" id="interpreters-file" accept=".csv" required
+               data-file-name-target="interpreters-file-name">
+        <div class="file-picker">
+          <label class="file-trigger" for="interpreters-file">Choose File</label>
+          <span class="file-name" id="interpreters-file-name">No file chosen</span>
+        </div>
         <button type="submit" class="secondary">Import interpreters.csv</button>
       </form>
       <a class="button-link secondary" href="/admin/export/interpreters.csv">Export interpreters.csv</a>
@@ -112,4 +122,23 @@
     </div>
   </div>
 </section>
+<script>
+  function shortenFileName(name) {
+    if (name.length <= 30) return name;
+    var dotIndex = name.lastIndexOf(".");
+    var extension = dotIndex > 0 ? name.slice(dotIndex) : "";
+    var stem = extension ? name.slice(0, dotIndex) : name;
+    var suffixLength = Math.min(10, stem.length);
+    return stem.slice(0, 17) + "~" + stem.slice(stem.length - suffixLength) + extension;
+  }
+
+  document.querySelectorAll(".file-input-native").forEach(function(input) {
+    input.addEventListener("change", function() {
+      var target = document.getElementById(input.dataset.fileNameTarget);
+      var file = input.files && input.files[0];
+      target.textContent = file ? shortenFileName(file.name) : "No file chosen";
+      target.title = file ? file.name : "";
+    });
+  });
+</script>
 {% endblock %}

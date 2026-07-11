@@ -8,6 +8,7 @@ from tests.factories import AMSTERDAM, ROTTERDAM
 def test_defaults_are_returned_without_any_update():
     current = settings.get()
     assert current == settings.Settings()
+    assert current.coverage_radius_km == 100.0
 
 
 def test_update_changes_only_the_given_fields():

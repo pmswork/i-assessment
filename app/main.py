@@ -29,7 +29,7 @@ from . import reliability
 from . import settings as settings_module
 from .coverage import coverage_gauge, coverage_label, coverage_stats
 from .data_loader import load_interpreters, load_jobs
-from .models import Interpreter, Job
+from .models import BlacklistEntry, Interpreter, Job
 from .reliability import EventType
 from .rules import ValidationStatus, is_qualified, validate_assignment
 from .scheduler import best_candidate_for, run_auto_assignment
@@ -57,6 +57,7 @@ def _bootstrap_store() -> PlanningStore:
         bootstrapped.assignments = assignments
         bootstrapped.assignment_source = sources
         bootstrapped.unassigned_reasons = reasons
+        bootstrapped.blacklist_entries = db_module.load_blacklist_entries()
         return bootstrapped
 
     seeded = PlanningStore(
@@ -88,21 +89,47 @@ def _job_row(job):
         "reasons_more_count": max(0, len(reasons) - _REASONS_PREVIEW_COUNT),
         "coverage_label": coverage_label(stats),
         "coverage_gauge": gauge,
+        "coverage_within": stats.within_radius,
     }
 
 
 @app.get("/")
-def index(request: Request):
+def index(request: Request, status: str = "all", sort: str = "date"):
     rows = [_job_row(j) for j in store.jobs_sorted()]
     assigned_count = sum(1 for r in rows if r["interpreter"] is not None)
+    unassigned_count = len(rows) - assigned_count
+
+    if status == "needs_decision":
+        rows = [row for row in rows if row["interpreter"] is None]
+    elif status == "assigned":
+        rows = [row for row in rows if row["interpreter"] is not None]
+    else:
+        status = "all"
+
+    sorters = {
+        "date": lambda row: (row["job"].date, row["job"].start_time, row["job"].job_id),
+        "job": lambda row: row["job"].job_id,
+        "client": lambda row: (row["job"].client.casefold(), row["job"].date, row["job"].start_time),
+        "language": lambda row: (row["job"].language.casefold(), row["job"].date, row["job"].start_time),
+        "status": lambda row: (0 if row["interpreter"] is None else 1, row["job"].date, row["job"].start_time),
+        "coverage": lambda row: (row["coverage_within"], row["job"].date, row["job"].start_time),
+    }
+    if sort not in sorters:
+        sort = "date"
+    rows = sorted(rows, key=sorters[sort])
+
     return templates.TemplateResponse(
         request,
         "index.html",
         {
             "rows": rows,
             "assigned_count": assigned_count,
-            "unassigned_count": len(rows) - assigned_count,
-            "total_count": len(rows),
+            "unassigned_count": unassigned_count,
+            "total_count": len(store.jobs),
+            "displayed_count": len(rows),
+            "status_filter": status,
+            "sort": sort,
+            "coverage_radius_km": settings_module.get().coverage_radius_km,
         },
     )
 
@@ -119,10 +146,13 @@ def _candidate_row(job, interpreter):
     track record, so a planner can judge a candidate without leaving the
     page."""
     rel = reliability.score(interpreter.interpreter_id)
+    blacklist_reasons = store.blacklist_reasons(interpreter.interpreter_id, job.client)
     return {
         "interpreter": interpreter,
         "workload_min": store.workload_minutes(interpreter.interpreter_id),
         "reliability": rel,
+        "blacklist_reasons": blacklist_reasons,
+        "is_blacklisted": bool(blacklist_reasons),
         "info": (
             f"{interpreter.language}{' (sworn)' if interpreter.sworn else ''} · "
             f"€{interpreter.rate_eur_per_hour:.0f}/h · home: {interpreter.home_city} · "
@@ -149,7 +179,7 @@ def _planner_questions_for(result) -> list[str]:
         elif "long one-way distance" in lower:
             questions.append("Can you confirm the interpreter is willing to travel this distance for the appointment?")
         elif "court hearing" in lower or "rechtbank" in lower or "zitting" in lower:
-            questions.append("Can you confirm the interpreter has enough buffer if the hearing runs longer than planned?")
+            questions.append("Can you confirm the interpreter has enough buffer if the zitting/hearing runs longer than planned?")
         elif "preparation" in lower or "voorbereiding" in lower:
             questions.append("Can you confirm the interpreter has enough preparation time before the hearing?")
 
@@ -275,6 +305,7 @@ def interpreter_detail(request: Request, interpreter_id: str):
     schedule = sorted(store.schedule_for(interpreter_id), key=lambda j: j.start_dt)
     rel = reliability.score(interpreter_id)
     events = reliability.events_for(interpreter_id)
+    clients = sorted({job.client for job in store.jobs.values()}, key=str.casefold)
     return templates.TemplateResponse(
         request,
         "interpreter_detail.html",
@@ -284,8 +315,42 @@ def interpreter_detail(request: Request, interpreter_id: str):
             "workload_min": store.workload_minutes(interpreter_id),
             "reliability": rel,
             "events": events,
+            "blacklist_entries": store.blacklist_for(interpreter_id),
+            "clients": clients,
         },
     )
+
+
+@app.post("/interpreters/{interpreter_id}/blacklist")
+def add_blacklist_entry(
+    interpreter_id: str,
+    scope: str = Form(...),
+    client: str = Form(""),
+    reason: str = Form(""),
+):
+    if interpreter_id not in store.interpreters:
+        return RedirectResponse("/interpreters", status_code=303)
+    if scope not in ("global", "client"):
+        return RedirectResponse(f"/interpreters/{interpreter_id}", status_code=303)
+    client = client.strip()
+    if scope == "client" and not client:
+        return RedirectResponse(f"/interpreters/{interpreter_id}", status_code=303)
+    store.add_blacklist_entry(
+        BlacklistEntry(interpreter_id=interpreter_id, scope=scope, client=client, reason=reason)
+    )
+    store.persist_now()
+    return RedirectResponse(f"/interpreters/{interpreter_id}", status_code=303)
+
+
+@app.post("/interpreters/{interpreter_id}/blacklist/delete")
+def delete_blacklist_entry(
+    interpreter_id: str,
+    scope: str = Form(...),
+    client: str = Form(""),
+):
+    store.delete_blacklist_entry(interpreter_id, scope, client)
+    store.persist_now()
+    return RedirectResponse(f"/interpreters/{interpreter_id}", status_code=303)
 
 
 @app.get("/interpreters")

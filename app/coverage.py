@@ -83,7 +83,7 @@ def coverage_label(stats: CoverageStats, radius_km: float | None = None) -> str:
     """Compact string for the job-list UI."""
     if stats.qualified_total == 0:
         # No language/sworn match at all — a different, already-reported
-        # problem (see scheduler._explain_unassigned); "0/0 <=50km" would
+        # problem (see scheduler._explain_unassigned); "0/0 <=100km" would
         # just be confusing here.
         return "0 qualified"
     if not stats.distance_applicable:

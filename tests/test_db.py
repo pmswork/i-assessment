@@ -1,4 +1,5 @@
 from app import db, settings
+from app.models import BlacklistEntry
 from app.store import PlanningStore
 from tests.factories import AMSTERDAM, make_interpreter, make_job
 
@@ -36,6 +37,22 @@ def test_sync_store_round_trips_unassigned_reasons():
 
     _assignments, _sources, reasons = db.load_assignments()
     assert reasons == {job.job_id: ["no interpreter supports this language"]}
+
+
+def test_sync_store_round_trips_blacklist_entries():
+    interpreter = make_interpreter()
+    store = PlanningStore([], [interpreter], persist=True)
+    entry = BlacklistEntry(
+        interpreter_id=interpreter.interpreter_id,
+        scope="client",
+        client="Test Client",
+        reason="Client requested another interpreter",
+    )
+    store.add_blacklist_entry(entry)
+
+    store.persist_now()
+
+    assert db.load_blacklist_entries() == [entry]
 
 
 def test_sync_store_is_a_full_replace_not_an_append():

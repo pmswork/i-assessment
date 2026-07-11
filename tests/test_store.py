@@ -1,3 +1,6 @@
+from dataclasses import replace
+
+from app.models import BlacklistEntry
 from app.store import PlanningStore
 from tests.factories import make_interpreter, make_job
 
@@ -74,3 +77,37 @@ def test_replace_interpreters_drops_assignments_for_interpreters_that_no_longer_
     assert set(store.interpreters) == {"INT-KEEP"}
     assert job_a.job_id in store.assignments
     assert job_b.job_id not in store.assignments
+
+
+def test_client_blacklist_only_matches_that_client_and_clears_assignment():
+    interpreter = make_interpreter()
+    blocked_job = make_job(job_id="J-BLOCKED")
+    other_job = replace(make_job(job_id="J-OTHER"), client="Another Client")
+    store = PlanningStore([blocked_job, other_job], [interpreter])
+    store.assign(blocked_job.job_id, interpreter.interpreter_id)
+    store.assign(other_job.job_id, interpreter.interpreter_id)
+
+    store.add_blacklist_entry(
+        BlacklistEntry(
+            interpreter_id=interpreter.interpreter_id,
+            scope="client",
+            client=blocked_job.client,
+            reason="Client asked not to send again",
+        )
+    )
+
+    assert store.is_blacklisted(interpreter.interpreter_id, blocked_job.client)
+    assert not store.is_blacklisted(interpreter.interpreter_id, "Another Client")
+    assert blocked_job.job_id not in store.assignments
+    assert other_job.job_id in store.assignments
+
+
+def test_global_blacklist_matches_every_client():
+    interpreter = make_interpreter()
+    store = PlanningStore([], [interpreter])
+
+    store.add_blacklist_entry(
+        BlacklistEntry(interpreter_id=interpreter.interpreter_id, scope="global", reason="Do not assign")
+    )
+
+    assert store.is_blacklisted(interpreter.interpreter_id, "Any Client")

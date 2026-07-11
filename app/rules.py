@@ -62,6 +62,17 @@ def _overlaps(a: Job, b: Job) -> bool:
 
 def check_hard_constraints(job: Job, interpreter: Interpreter, schedule: list[Job]) -> list[str]:
     """Return every hard-constraint violation. Empty list means feasible."""
+    return check_hard_constraints_with_blacklist(job, interpreter, schedule)
+
+
+def check_hard_constraints_with_blacklist(
+    job: Job,
+    interpreter: Interpreter,
+    schedule: list[Job],
+    *,
+    blacklist_lookup=None,
+) -> list[str]:
+    """Return every hard-constraint violation. Empty list means feasible."""
     reasons: list[str] = []
 
     if interpreter.language != job.language:
@@ -73,6 +84,11 @@ def check_hard_constraints(job: Job, interpreter: Interpreter, schedule: list[Jo
         reasons.append(
             f"This job requires a sworn interpreter and {interpreter.name} is not sworn."
         )
+
+    if blacklist_lookup is not None and blacklist_lookup.is_blacklisted(interpreter.interpreter_id, job.client):
+        blacklist_reasons = blacklist_lookup.blacklist_reasons(interpreter.interpreter_id, job.client)
+        detail = "; ".join(blacklist_reasons) if blacklist_reasons else "blacklisted for this client"
+        reasons.append(f"{interpreter.name} cannot be assigned to {job.client}: {detail}.")
 
     window = interpreter.availability_on(job.date)
     if window is None:
@@ -200,6 +216,7 @@ def validate_assignment(
     *,
     all_interpreters: list[Interpreter] | None = None,
     workload_lookup=None,
+    blacklist_lookup=None,
 ) -> ValidationResult:
     """Validate assigning `interpreter` to `job`.
 
@@ -208,7 +225,11 @@ def validate_assignment(
     them) so re-validating an existing assignment works the same way as
     validating a brand new one.
     """
-    hard_reasons = check_hard_constraints(job, interpreter, schedule)
+    if blacklist_lookup is None:
+        blacklist_lookup = workload_lookup
+    hard_reasons = check_hard_constraints_with_blacklist(
+        job, interpreter, schedule, blacklist_lookup=blacklist_lookup
+    )
     if hard_reasons:
         return ValidationResult(ValidationStatus.REJECTED, hard_reasons)
 
@@ -265,7 +286,7 @@ def _court_work_warnings(job: Job, interpreter: Interpreter, schedule: list[Job]
 
     warnings = [
         (
-            "Court hearing / rechtbankwerk: hearings can run longer than planned. "
+            "Court hearing / rechtbankwerk (zitting = hearing): hearings can run longer than planned. "
             f"Confirm {interpreter.name} has enough buffer after this job if the zitting overruns."
         )
     ]
@@ -410,7 +431,9 @@ def _cheaper_alternative(
     ]
     for candidate in sorted(candidates, key=lambda i: i.rate_eur_per_hour):
         schedule = workload_lookup.schedule_for(candidate.interpreter_id, exclude_job_id=job.job_id)
-        if not check_hard_constraints(job, candidate, schedule):
+        if not check_hard_constraints_with_blacklist(
+            job, candidate, schedule, blacklist_lookup=workload_lookup
+        ):
             return candidate
     return None
 
@@ -429,7 +452,9 @@ def _workload_warning(
         if candidate.interpreter_id == interpreter.interpreter_id or not is_qualified(job, candidate):
             continue
         schedule = workload_lookup.schedule_for(candidate.interpreter_id, exclude_job_id=job.job_id)
-        if check_hard_constraints(job, candidate, schedule):
+        if check_hard_constraints_with_blacklist(
+            job, candidate, schedule, blacklist_lookup=workload_lookup
+        ):
             continue
         other_loads.append(workload_lookup.workload_minutes(candidate.interpreter_id, exclude_job_id=job.job_id))
 

@@ -2,11 +2,13 @@ from app import settings
 from app.coverage import CoverageGauge, coverage_gauge, coverage_label, coverage_stats
 from tests.factories import AMSTERDAM, ROTTERDAM, make_interpreter, make_job
 
+GRONINGEN = (53.2194, 6.5665)
+
 
 def test_onsite_job_counts_only_qualified_interpreters_within_radius():
     near = make_interpreter(interpreter_id="INT-NEAR", home=AMSTERDAM)
-    # Rotterdam is ~57km from Amsterdam — outside the 50km coverage radius.
-    far = make_interpreter(interpreter_id="INT-FAR", home=ROTTERDAM)
+    # Groningen is outside the default 100km coverage radius.
+    far = make_interpreter(interpreter_id="INT-FAR", home=GRONINGEN)
     job = make_job(modality="on-site", location=AMSTERDAM)
 
     stats = coverage_stats(job, [near, far])
@@ -18,7 +20,7 @@ def test_onsite_job_counts_only_qualified_interpreters_within_radius():
 
 
 def test_onsite_job_is_scarce_when_qualified_interpreters_all_live_too_far():
-    far = make_interpreter(interpreter_id="INT-FAR", home=ROTTERDAM)
+    far = make_interpreter(interpreter_id="INT-FAR", home=GRONINGEN)
     job = make_job(modality="on-site", location=AMSTERDAM)
 
     stats = coverage_stats(job, [far])
@@ -98,7 +100,7 @@ def test_coverage_gauge_zero_qualified_is_the_none_level_with_no_bars_lit():
 
 
 def test_coverage_gauge_qualified_but_none_nearby_is_empty_level():
-    far = make_interpreter(home=ROTTERDAM)  # outside 50km radius of Amsterdam
+    far = make_interpreter(home=GRONINGEN)  # outside 100km radius of Amsterdam
     job = make_job(modality="on-site", location=AMSTERDAM)
 
     gauge = coverage_gauge(coverage_stats(job, [far]), cap=3)

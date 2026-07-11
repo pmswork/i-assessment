@@ -197,11 +197,34 @@ h1, h2 { margin: 0; color: #ffffff; }
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.8rem;
   padding: 0.72rem 1.05rem;
   border-bottom: 1px solid var(--line);
   background: var(--surface-alt);
+}
+
+.board-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.board-controls select {
+  width: 170px;
+}
+
+.sort-link {
+  color: #d0deec;
+  text-decoration: none;
+}
+
+.sort-link:hover,
+.sort-link.is-active {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 .table-wrap { overflow-x: auto; }
@@ -436,7 +459,91 @@ tr.job-row a:not(.row-link) {
   color: var(--text);
 }
 
+.blacklist-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 180px) minmax(220px, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+  align-items: end;
+}
+
+.blacklist-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blacklist-form .field-wide {
+  grid-column: 1 / -1;
+}
+
+.blacklist-form button {
+  justify-self: start;
+}
+
 form.inline { display: inline-block; }
+
+.admin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.import-form {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.import-form button {
+  white-space: nowrap;
+}
+
+.file-input-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.file-picker {
+  display: inline-flex;
+  align-items: center;
+  width: 300px;
+  height: 34px;
+  min-width: 300px;
+  border: 1px solid #637d9b;
+  background: var(--field-bg);
+  color: var(--field-text);
+  overflow: hidden;
+}
+
+.file-trigger {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  flex: 0 0 auto;
+  padding: 0 0.55rem;
+  border-right: 1px solid #8fa0b0;
+  background: #6f7479;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file-name {
+  display: block;
+  min-width: 0;
+  padding: 0 0.45rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+}
 
 .field-row {
   display: grid;
@@ -688,5 +795,6 @@ tr.is-checked { background: var(--surface-soft); }
     flex-direction: column;
   }
 
+  .blacklist-form,
   .field-row { grid-template-columns: 1fr; }
 }

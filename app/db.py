@@ -51,7 +51,7 @@ from datetime import date, datetime, time
 from pathlib import Path
 
 from . import settings as settings_module
-from .models import Interpreter, Job
+from .models import BlacklistEntry, Interpreter, Job
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "app.db"
 
@@ -105,6 +105,16 @@ CREATE TABLE IF NOT EXISTS unassigned_reasons (
     job_id TEXT PRIMARY KEY REFERENCES jobs(job_id) ON DELETE CASCADE,
     reasons_json TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS blacklist_entries (
+    interpreter_id TEXT NOT NULL REFERENCES interpreters(interpreter_id) ON DELETE CASCADE,
+    scope TEXT NOT NULL CHECK (scope IN ('global', 'client')),
+    client TEXT NOT NULL DEFAULT '',
+    reason TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (interpreter_id, scope, client)
+);
+CREATE INDEX IF NOT EXISTS idx_blacklist_interpreter ON blacklist_entries(interpreter_id);
+CREATE INDEX IF NOT EXISTS idx_blacklist_client ON blacklist_entries(client);
 
 CREATE TABLE IF NOT EXISTS reliability_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -229,6 +239,18 @@ def load_assignments(
     return assignments, sources, reasons
 
 
+def load_blacklist_entries(db_path: Path | None = None) -> list[BlacklistEntry]:
+    with _connection(db_path) as conn:
+        rows = conn.execute(
+            "SELECT interpreter_id, scope, client, reason FROM blacklist_entries "
+            "ORDER BY interpreter_id, scope, client"
+        ).fetchall()
+    return [
+        BlacklistEntry(interpreter_id=r[0], scope=r[1], client=r[2], reason=r[3])
+        for r in rows
+    ]
+
+
 def sync_store(store, db_path: Path | None = None) -> None:
     """Persist a PlanningStore's full current state — jobs, interpreters,
     assignments, unassigned reasons — in one transaction.
@@ -241,6 +263,7 @@ def sync_store(store, db_path: Path | None = None) -> None:
     """
     with _connection(db_path) as conn:
         conn.execute("DELETE FROM interpreter_availability")
+        conn.execute("DELETE FROM blacklist_entries")
         conn.execute("DELETE FROM interpreters")
         conn.execute("DELETE FROM jobs")  # cascades assignments + unassigned_reasons
 
@@ -288,6 +311,14 @@ def sync_store(store, db_path: Path | None = None) -> None:
         conn.executemany(
             "INSERT INTO unassigned_reasons (job_id, reasons_json) VALUES (?, ?)",
             [(job_id, json.dumps(reasons)) for job_id, reasons in store.unassigned_reasons.items()],
+        )
+        conn.executemany(
+            "INSERT INTO blacklist_entries (interpreter_id, scope, client, reason) VALUES (?, ?, ?, ?)",
+            [
+                (entry.interpreter_id, entry.scope, entry.client, entry.reason)
+                for entry in store.blacklist_entries
+                if entry.interpreter_id in store.interpreters
+            ],
         )
 
 

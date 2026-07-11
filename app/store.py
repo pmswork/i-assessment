@@ -29,7 +29,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from . import db as db_module
-from .models import Interpreter, Job
+from .models import BlacklistEntry, Interpreter, Job
 
 
 @dataclass
@@ -42,6 +42,7 @@ class PlanningStore:
     def __init__(self, jobs: list[Job], interpreters: list[Interpreter], persist: bool = False):
         self.jobs: dict[str, Job] = {j.job_id: j for j in jobs}
         self.interpreters: dict[str, Interpreter] = {i.interpreter_id: i for i in interpreters}
+        self.blacklist_entries: list[BlacklistEntry] = []
         self.assignments: dict[str, str] = {}  # job_id -> interpreter_id
         self.assignment_source: dict[str, str] = {}  # job_id -> "auto" | "manual"
         self.unassigned_reasons: dict[str, list[str]] = {}
@@ -67,6 +68,68 @@ class PlanningStore:
 
     def workload_minutes(self, interpreter_id: str, exclude_job_id: str | None = None) -> int:
         return sum(j.duration_min for j in self.schedule_for(interpreter_id, exclude_job_id))
+
+    # -- blacklist -------------------------------------------------------------
+
+    @staticmethod
+    def normalize_client(client: str) -> str:
+        return " ".join(client.casefold().split())
+
+    def blacklist_for(self, interpreter_id: str) -> list[BlacklistEntry]:
+        return [entry for entry in self.blacklist_entries if entry.interpreter_id == interpreter_id]
+
+    def blacklist_reasons(self, interpreter_id: str, client: str) -> list[str]:
+        normalized_client = self.normalize_client(client)
+        reasons: list[str] = []
+        for entry in self.blacklist_for(interpreter_id):
+            if entry.is_global:
+                reasons.append(entry.reason or "Interpreter is blacklisted for all clients.")
+            elif self.normalize_client(entry.client) == normalized_client:
+                reasons.append(entry.reason or f"Interpreter is blacklisted for client {entry.client}.")
+        return reasons
+
+    def is_blacklisted(self, interpreter_id: str, client: str) -> bool:
+        return bool(self.blacklist_reasons(interpreter_id, client))
+
+    def add_blacklist_entry(self, entry: BlacklistEntry) -> None:
+        client = entry.client.strip() if entry.scope == "client" else ""
+        normalized_client = self.normalize_client(client)
+        kept = []
+        for existing in self.blacklist_entries:
+            same_interpreter = existing.interpreter_id == entry.interpreter_id
+            same_scope = existing.scope == entry.scope
+            same_client = self.normalize_client(existing.client) == normalized_client
+            if same_interpreter and same_scope and (entry.scope == "global" or same_client):
+                continue
+            kept.append(existing)
+        kept.append(
+            BlacklistEntry(
+                interpreter_id=entry.interpreter_id,
+                scope=entry.scope,
+                client=client,
+                reason=entry.reason.strip(),
+            )
+        )
+        self.blacklist_entries = kept
+        self._clear_blacklisted_assignments(entry.interpreter_id)
+
+    def delete_blacklist_entry(self, interpreter_id: str, scope: str, client: str = "") -> None:
+        normalized_client = self.normalize_client(client)
+        self.blacklist_entries = [
+            entry
+            for entry in self.blacklist_entries
+            if not (
+                entry.interpreter_id == interpreter_id
+                and entry.scope == scope
+                and (scope == "global" or self.normalize_client(entry.client) == normalized_client)
+            )
+        ]
+
+    def _clear_blacklisted_assignments(self, interpreter_id: str) -> None:
+        for job_id, assigned_interpreter_id in list(self.assignments.items()):
+            job = self.jobs.get(job_id)
+            if assigned_interpreter_id == interpreter_id and job is not None and self.is_blacklisted(interpreter_id, job.client):
+                self.unassign(job_id)
 
     # -- assignment mutation -----------------------------------------------------
 
@@ -128,6 +191,9 @@ class PlanningStore:
         for job_id in affected_jobs:
             self.assignments.pop(job_id, None)
             self.assignment_source.pop(job_id, None)
+        self.blacklist_entries = [
+            entry for entry in self.blacklist_entries if entry.interpreter_id != interpreter_id
+        ]
 
     def replace_jobs(self, jobs: list[Job]) -> None:
         """CSV import of jobs.csv: replace the whole job list, dropping
@@ -143,6 +209,8 @@ class PlanningStore:
         self.unassigned_reasons = {
             job_id: reasons for job_id, reasons in self.unassigned_reasons.items() if job_id in self.jobs
         }
+        for interpreter_id in list(self.interpreters):
+            self._clear_blacklisted_assignments(interpreter_id)
 
     def replace_interpreters(self, interpreters: list[Interpreter]) -> None:
         """CSV import of interpreters.csv: replace the whole roster,
@@ -153,6 +221,9 @@ class PlanningStore:
         for job_id in stale:
             self.assignments.pop(job_id, None)
             self.assignment_source.pop(job_id, None)
+        self.blacklist_entries = [
+            entry for entry in self.blacklist_entries if entry.interpreter_id in self.interpreters
+        ]
 
     # -- read helpers for the UI ---------------------------------------------
 

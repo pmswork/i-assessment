@@ -471,7 +471,7 @@ working unchanged.
 
 The job list has a **Coverage** column: a signal-strength-style gauge (3
 small bars, like a phone signal or battery icon) plus a compact number,
-e.g. `2/3 ≤50km` or `3 qualified (remote)`. It answers a narrower question
+e.g. `2/3 ≤100km` or `3 qualified (remote)`. It answers a narrower question
 than full validation: *"of the interpreters who are language/sworn-
 qualified for this job, how many live within the coverage radius
 (straight-line) of it?"*
@@ -511,7 +511,7 @@ replace validation. The radius and gauge cap are planner-adjustable in
 Settings, not hardcoded (see "Settings" above).
 
 The same signal feeds into `scheduler._explain_unassigned`: when a job
-ends up unassigned *and* has zero qualified interpreters within 50 km, the
+ends up unassigned *and* has zero qualified interpreters within 100 km, the
 reported reasons include an extra note calling that out — alongside, not
 instead of, the concrete blocking reason (e.g. "already booked" or
 "outside working hours"), so a planner sees both the immediate cause and
@@ -720,7 +720,7 @@ request and syncs after mutations.
    a *different* existing assignment.
 4. **A real routing/distance-matrix API** behind the same `travel.py`
    interface, with the haversine approximation kept as an offline fallback —
-   this would also sharpen the coverage indicator from "within 50 km as the
+   this would also sharpen the coverage indicator from "within 100 km as the
    crow flies" to "reachable within N minutes by road."
 5. **Basic auth + an audit log for the Admin tab** — who imported what,
    who edited/deleted which job or interpreter, and when. Not needed for a

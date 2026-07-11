@@ -20,20 +20,29 @@
     <form method="post" action="/auto-assign" class="inline">
       <button type="submit">Re-run auto-assignment</button>
     </form>
-    <span class="muted">Recomputes the whole schedule from scratch with the current CSV data.</span>
+    <form method="get" action="/" class="board-controls">
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <select name="status" aria-label="Status filter">
+        <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>All jobs</option>
+        <option value="needs_decision" {{ 'selected' if status_filter == 'needs_decision' else '' }}>Needs decision</option>
+        <option value="assigned" {{ 'selected' if status_filter == 'assigned' else '' }}>Assigned</option>
+      </select>
+      <button type="submit" class="secondary">Filter</button>
+    </form>
+    <span class="muted">{{ displayed_count }} shown</span>
   </div>
 
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Job</th>
-          <th>When</th>
-          <th>Language</th>
+          <th><a class="sort-link {{ 'is-active' if sort == 'job' else '' }}" href="/?status={{ status_filter }}&sort=job">Job</a></th>
+          <th><a class="sort-link {{ 'is-active' if sort == 'date' else '' }}" href="/?status={{ status_filter }}&sort=date">When</a></th>
+          <th><a class="sort-link {{ 'is-active' if sort == 'language' else '' }}" href="/?status={{ status_filter }}&sort=language">Language</a></th>
           <th>Modality</th>
-          <th>Client / City</th>
-          <th>Coverage</th>
-          <th>Status</th>
+          <th><a class="sort-link {{ 'is-active' if sort == 'client' else '' }}" href="/?status={{ status_filter }}&sort=client">Client / City</a></th>
+          <th><a class="sort-link {{ 'is-active' if sort == 'coverage' else '' }}" href="/?status={{ status_filter }}&sort=coverage">Coverage</a></th>
+          <th><a class="sort-link {{ 'is-active' if sort == 'status' else '' }}" href="/?status={{ status_filter }}&sort=status">Status</a></th>
         </tr>
       </thead>
       <tbody>
@@ -46,7 +55,7 @@
           <td>{{ row.job.client }}{% if row.job.city %} - {{ row.job.city }}{% endif %}</td>
           <td>
             <div class="coverage-cell"
-                 title="{{ row.coverage_label }} — qualified (language/sworn) interpreters within 50km straight-line. Approximate: ignores availability and current bookings.">
+                 title="{{ row.coverage_label }} — qualified (language/sworn) interpreters within {{ '%.0f'|format(coverage_radius_km) }}km straight-line. Approximate: ignores availability and current bookings.">
               <span class="coverage-gauge level-{{ row.coverage_gauge.level }}">
                 {% for i in range(row.coverage_gauge.segments_total) %}
                 <span class="coverage-gauge__bar {{ 'is-lit' if i < row.coverage_gauge.segments_lit else '' }}"></span>

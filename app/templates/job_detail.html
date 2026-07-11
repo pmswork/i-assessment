@@ -128,6 +128,9 @@
               <td>
                 <a class="candidate-name" href="/interpreters/{{ c.interpreter.interpreter_id }}">{{ c.interpreter.name }}</a>
                 <span class="info-icon" title="{{ c.info }}">i</span>
+                {% if c.is_blacklisted %}
+                <span class="tag rel-bad" title="{{ c.blacklist_reasons|join('; ') }}">blacklisted</span>
+                {% endif %}
               </td>
               <td class="muted">{{ c.interpreter.home_city }}</td>
               <td>€{{ '%.0f'|format(c.interpreter.rate_eur_per_hour) }}/h</td>

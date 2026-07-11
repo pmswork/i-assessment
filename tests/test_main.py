@@ -35,6 +35,21 @@ def test_index_loads_and_shows_the_logo_and_coverage_column():
     assert response.status_code == 200
     assert "Logo_Elan" in response.text
     assert "Coverage" in response.text
+    assert "Needs decision" in response.text
+    assert "sort=client" in response.text
+    assert "Filter" in response.text
+    assert "<span>Sort</span>" not in response.text
+
+
+def test_index_can_filter_for_jobs_needing_decision():
+    client.post("/auto-assign")
+
+    response = client.get("/?status=needs_decision&sort=job")
+
+    assert response.status_code == 200
+    assert "J013" in response.text
+    assert "needs decision" in response.text
+    assert "/jobs/J001" not in response.text
 
 
 def test_job_detail_hides_unqualified_interpreters_from_the_candidate_list():
@@ -125,6 +140,35 @@ def test_interpreters_index_loads_the_roster():
     assert "Availability" in response.text
 
 
+def test_interpreter_blacklist_blocks_client_assignment_and_can_be_removed():
+    client.post(
+        "/interpreters/INT-02/blacklist",
+        data={
+            "scope": "client",
+            "client": "Jeugdzorg – beeldbellen",
+            "reason": "Client requested not to send again",
+        },
+        follow_redirects=False,
+    )
+
+    profile = client.get("/interpreters/INT-02")
+    assert "Jeugdzorg" in profile.text
+    assert "Client requested not to send again" in profile.text
+
+    check = client.post("/jobs/J001/validate", data={"interpreter_id": "INT-02"})
+    assert check.status_code == 200
+    assert "blacklisted" in check.text
+    assert "cannot be assigned" in check.text
+
+    client.post(
+        "/interpreters/INT-02/blacklist/delete",
+        data={"scope": "client", "client": "Jeugdzorg – beeldbellen"},
+        follow_redirects=False,
+    )
+    profile = client.get("/interpreters/INT-02")
+    assert "Client requested not to send again" not in profile.text
+
+
 def test_warning_assignment_requires_explicit_confirmation():
     client.post("/auto-assign")
     client.post("/jobs/J001/unassign")
@@ -154,6 +198,7 @@ def test_court_job_check_shows_court_and_preparation_questions():
 
     assert response.status_code == 200
     assert "Court hearing" in response.text or "rechtbankwerk" in response.text
+    assert "zitting = hearing" in response.text
     assert "preparation time" in response.text.lower() or "voorbereidingstijd" in response.text.lower()
     assert "enough buffer" in response.text
 

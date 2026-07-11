@@ -1,6 +1,7 @@
 from dataclasses import replace
 from datetime import time
 
+from app.models import BlacklistEntry
 from app.rules import ValidationStatus, validate_assignment
 from app.store import PlanningStore
 from tests.factories import AMSTERDAM, ROTTERDAM, UTRECHT, make_interpreter, make_job
@@ -28,6 +29,25 @@ def test_sworn_required_but_interpreter_not_sworn_is_rejected():
     result = validate_assignment(job, interpreter, schedule=[])
     assert result.status == ValidationStatus.REJECTED
     assert "sworn" in result.reasons[0].lower()
+
+
+def test_blacklisted_interpreter_is_rejected_for_matching_client():
+    job = make_job()
+    interpreter = make_interpreter()
+    store = PlanningStore([job], [interpreter])
+    store.add_blacklist_entry(
+        BlacklistEntry(
+            interpreter_id=interpreter.interpreter_id,
+            scope="client",
+            client=job.client,
+            reason="Client requested not to send again",
+        )
+    )
+
+    result = validate_assignment(job, interpreter, schedule=[], workload_lookup=store)
+
+    assert result.status == ValidationStatus.REJECTED
+    assert "cannot be assigned" in result.reasons[0]
 
 
 def test_job_outside_availability_window_is_rejected():

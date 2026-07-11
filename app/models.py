@@ -29,6 +29,18 @@ class Interpreter:
 
 
 @dataclass(frozen=True)
+class BlacklistEntry:
+    interpreter_id: str
+    scope: str  # "global" | "client"
+    client: str = ""
+    reason: str = ""
+
+    @property
+    def is_global(self) -> bool:
+        return self.scope == "global"
+
+
+@dataclass(frozen=True)
 class Job:
     job_id: str
     date: date

@@ -3,12 +3,14 @@ from pathlib import Path
 
 from app import reliability
 from app.data_loader import load_interpreters, load_jobs
+from app.models import BlacklistEntry
 from app.reliability import EventType
 from app.scheduler import best_candidate_for, run_auto_assignment
 from app.store import PlanningStore
 from tests.factories import AMSTERDAM, ROTTERDAM, make_interpreter, make_job
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+GRONINGEN = (53.2194, 6.5665)
 
 
 def test_every_job_is_assigned_or_has_a_reason_on_the_real_dataset():
@@ -72,6 +74,25 @@ def test_scheduler_prefers_cheaper_interpreter_when_both_are_clean():
     assert store.assignments[job.job_id] == "INT-CHEAP"
 
 
+def test_scheduler_skips_blacklisted_interpreter():
+    blocked = make_interpreter(interpreter_id="INT-BLOCKED", rate=40.0)
+    backup = make_interpreter(interpreter_id="INT-BACKUP", rate=90.0)
+    job = make_job()
+    store = PlanningStore(jobs=[job], interpreters=[blocked, backup])
+    store.add_blacklist_entry(
+        BlacklistEntry(
+            interpreter_id=blocked.interpreter_id,
+            scope="client",
+            client=job.client,
+            reason="Client asked not to send again",
+        )
+    )
+
+    run_auto_assignment(store)
+
+    assert store.assignments[job.job_id] == "INT-BACKUP"
+
+
 def test_scheduler_leaves_job_unassigned_with_reason_when_no_language_match():
     interpreter = make_interpreter(language="Polish")
     job = make_job(language="Arabic")
@@ -98,11 +119,11 @@ def test_scheduler_prefers_less_travel_when_rate_and_status_tie():
 
 
 def test_unassigned_reason_includes_coverage_note_when_no_qualified_interpreter_is_nearby():
-    # Rotterdam is ~57km from Amsterdam, outside the 50km coverage radius.
+    # Groningen is outside the default 100km coverage radius.
     # A narrow availability window guarantees this job stays unassigned for
     # an unrelated (availability) reason, so this also checks the coverage
     # note is *added alongside* the existing reason, not a replacement.
-    far = make_interpreter(home=ROTTERDAM, window=(time(9, 0), time(9, 30)))
+    far = make_interpreter(home=GRONINGEN, window=(time(9, 0), time(9, 30)))
     job = make_job(modality="on-site", location=AMSTERDAM, start=time(10, 0), end=time(11, 0))
     store = PlanningStore(jobs=[job], interpreters=[far])
 
@@ -111,7 +132,7 @@ def test_unassigned_reason_includes_coverage_note_when_no_qualified_interpreter_
     assert job.job_id not in store.assignments
     reasons = store.unassigned_reasons[job.job_id]
     assert any("working hours" in r for r in reasons)
-    assert any("within 50 km" in r for r in reasons)
+    assert any("within 100 km" in r for r in reasons)
 
 
 def test_no_coverage_note_when_no_qualified_interpreter_exists_at_all():
@@ -124,7 +145,7 @@ def test_no_coverage_note_when_no_qualified_interpreter_exists_at_all():
     run_auto_assignment(store)
 
     reasons = store.unassigned_reasons[job.job_id]
-    assert not any("within 50 km" in r for r in reasons)
+    assert not any("within 100 km" in r for r in reasons)
 
 
 def test_auto_assignment_totals_unchanged_on_real_dataset():

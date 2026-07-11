@@ -35,7 +35,7 @@ from .reliability import points_for as reliability_points
 from .rules import (
     ValidationResult,
     ValidationStatus,
-    check_hard_constraints,
+    check_hard_constraints_with_blacklist,
     is_qualified,
     total_added_travel_km,
     total_added_travel_minutes,
@@ -103,7 +103,14 @@ def _explain_unassigned(job: Job, store: PlanningStore) -> list[str]:
 
     reasons: list[str] = []
     for interpreter in sworn_pool:
-        reasons.extend(check_hard_constraints(job, interpreter, store.schedule_for(interpreter.interpreter_id)))
+        reasons.extend(
+            check_hard_constraints_with_blacklist(
+                job,
+                interpreter,
+                store.schedule_for(interpreter.interpreter_id),
+                blacklist_lookup=store,
+            )
+        )
 
     # Should not happen: if every qualified interpreter had zero hard-
     # constraint violations, validate_assignment should have found at
