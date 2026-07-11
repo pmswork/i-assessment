@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-header">
+  <div>
+    <p class="eyebrow">Configuration</p>
+    <h1>Settings</h1>
+  </div>
+</div>
+
+<p class="muted">These thresholds drive travel-time estimates, warning triggers, and the coverage gauge across the
+  whole app (see README "Reliability scoring" / "Travel-time approximation" for how each one is used). Changes
+  apply immediately to the next check or auto-assignment run — use "Re-run auto-assignment" on the job list to see
+  the effect on the current schedule.</p>
+
+{% if saved %}
+<div class="result-box accepted"><span class="result-state">saved</span><p>Settings updated.</p></div>
+{% endif %}
+{% if error %}
+<div class="result-box rejected"><span class="result-state">rejected</span><p>{{ error }}</p></div>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-heading"><h2>Thresholds</h2></div>
+  <div class="panel-body">
+    <form method="post" action="/settings">
+      <div class="settings-grid">
+        {% for f in fields %}
+        <div class="settings-field">
+          <label for="{{ f.name }}">{{ f.label }}</label>
+          <input type="number" step="any" name="{{ f.name }}" id="{{ f.name }}" value="{{ f.value }}" required>
+          <p class="muted">{{ f.help_text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="action-row">
+        <button type="submit">Save settings</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

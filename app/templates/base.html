@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ELAN Interpreter Planner{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand__logo">
+          <img src="https://ik.imagekit.io/gtngroup/elan/logo/Logo_Elan%20Languages_primary.svg" alt="Elan Languages">
+        </span>
+        <span class="brand__name">ELAN Planning</span>
+        <span class="brand__sub">Interpreter allocation</span>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Sections">
+        <div class="sidebar-group">
+          <div class="sidebar-group__title">Planning</div>
+          <a class="sidebar-link {{ 'is-active' if request.url.path == '/' else '' }}" href="/">Job list</a>
+          <a class="sidebar-link {{ 'is-active' if request.url.path.startswith('/interpreters') else '' }}" href="/interpreters">Interpreters</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-group__title">Data</div>
+          <a class="sidebar-link {{ 'is-active' if request.url.path.startswith('/admin') else '' }}" href="/admin">Admin</a>
+          <a class="sidebar-link {{ 'is-active' if request.url.path.startswith('/settings') else '' }}" href="/settings">Settings</a>
+        </div>
+      </nav>
+
+      <div class="sidebar-meta">
+        SQLite-backed session (app.db)<br>
+        Auto-assignment does most of the work
+      </div>
+    </aside>
+
+    <div class="shell-main">
+      <nav class="top-nav" aria-label="Primary">
+        <a class="top-nav__link {{ 'is-active' if request.url.path == '/' or request.url.path.startswith('/jobs') else '' }}" href="/">Assignments</a>
+        <a class="top-nav__link {{ 'is-active' if request.url.path.startswith('/interpreters') else '' }}" href="/interpreters">Interpreters</a>
+        <a class="top-nav__link {{ 'is-active' if request.url.path.startswith('/admin') else '' }}" href="/admin">Admin</a>
+        <a class="top-nav__link {{ 'is-active' if request.url.path.startswith('/settings') else '' }}" href="/settings">Settings</a>
+      </nav>
+      <main class="page">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>

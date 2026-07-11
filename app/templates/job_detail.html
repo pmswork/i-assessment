@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back-link" href="/">&lt; Back to job list</a>
+
+<div class="section-header">
+  <div>
+    <p class="eyebrow">Manual assignment — last resort, not the default path</p>
+    <h1>{{ job.job_id }} - {{ job.client }}</h1>
+  </div>
+</div>
+
+<div class="situation {{ 'is-ok' if current_interpreter else 'is-open' }}">
+  <div class="situation__status">
+    {% if current_interpreter %}
+      Assigned to <a href="/interpreters/{{ current_interpreter.interpreter_id }}">{{ current_interpreter.name }}</a>
+      <span class="tag source-{{ current_source }}">{{ current_source }}</span> — no action needed.
+    {% else %}
+      Needs a decision — the system could not place this job on its own.
+    {% endif %}
+  </div>
+
+  {% if not current_interpreter %}
+    {% if reasons %}
+    <ul class="situation__reasons">{% for r in reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if suggestion %}
+    <p class="situation__suggestion">
+      <strong>Suggested override:</strong>
+      <a href="/interpreters/{{ suggestion.interpreter.interpreter_id }}">{{ suggestion.interpreter.name }}</a>
+      <span class="tag {{ 'result-warning' if suggestion.result.status.value == 'warning' else 'result-ok' }}">{{ suggestion.result.status.value }}</span>
+      {% if suggestion.result.reasons %}— {{ suggestion.result.reasons[0] }}{% endif %}
+    </p>
+    {% elif no_qualified_interpreters %}
+    <p class="situation__suggestion">No interpreter on the roster meets the basic language/sworn requirement for
+      this job — that's a roster gap, not a scheduling problem. Escalate rather than search for a workaround.</p>
+    {% else %}
+    <p class="situation__suggestion">No qualified interpreter can currently be recommended — everyone is either
+      unavailable, already booked, or cannot travel in time for this slot.</p>
+    {% endif %}
+  {% endif %}
+</div>
+
+<div class="detail-grid">
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Job details</h2>
+    </div>
+    <dl class="detail-list">
+      <div>
+        <dt>Date</dt>
+        <dd>{{ job.date }}</dd>
+      </div>
+      <div>
+        <dt>Time</dt>
+        <dd>{{ job.start_time.strftime('%H:%M') }}-{{ job.end_time.strftime('%H:%M') }} ({{ job.duration_min }} min)</dd>
+      </div>
+      <div>
+        <dt>Language</dt>
+        <dd>{{ job.language }}{% if job.sworn_required %} <span class="tag sworn">sworn required</span>{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Modality</dt>
+        <dd><span class="tag {{ 'onsite' if job.is_on_site else 'remote' }}">{{ job.modality }}</span></dd>
+      </div>
+      {% if job.is_on_site %}
+      <div>
+        <dt>Address</dt>
+        <dd>{{ job.address }}, {{ job.city }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    <div class="panel-body">
+      {% if current_interpreter %}
+      <form method="post" action="/jobs/{{ job.job_id }}/unassign" class="inline">
+        <button type="submit" class="secondary">Unassign</button>
+      </form>
+
+      <div class="outcome-actions">
+        <span class="muted">Record outcome:</span>
+        <form method="post" action="/jobs/{{ job.job_id }}/outcome" class="inline">
+          <input type="hidden" name="outcome" value="completed">
+          <button type="submit" class="secondary">Completed</button>
+        </form>
+        <form method="post" action="/jobs/{{ job.job_id }}/outcome" class="inline">
+          <input type="hidden" name="outcome" value="no_show">
+          <button type="submit" class="secondary">No-show</button>
+        </form>
+        <form method="post" action="/jobs/{{ job.job_id }}/outcome" class="inline">
+          <input type="hidden" name="outcome" value="late_cancellation">
+          <button type="submit" class="secondary">Late cancellation</button>
+        </form>
+      </div>
+      <p class="muted">Outcomes feed each interpreter's reliability score (see their profile) — this is what future
+        auto-assignment ranking uses instead of just "who said yes first".</p>
+      {% else %}
+      <p class="muted">Not currently assigned.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Qualified interpreters</h2>
+    </div>
+    <div class="panel-body">
+      {% if no_qualified_interpreters %}
+      <p class="muted">No interpreter on the roster supports {{ job.language }}{% if job.sworn_required %} as a sworn interpreter{% endif %}. There is nothing to check here — this needs a roster/staffing decision.</p>
+      {% else %}
+      <p class="muted">Only interpreters who meet the basic language/sworn requirement are listed. Click a name for
+        full history, or the info mark for a quick summary.</p>
+
+      <div class="table-wrap">
+        <table class="candidate-table">
+          <thead>
+            <tr>
+              <th>Interpreter</th>
+              <th>Home</th>
+              <th>Rate</th>
+              <th>Reliability</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in candidates %}
+            <tr class="{{ 'is-checked' if c.interpreter.interpreter_id == checked_interpreter_id else '' }}">
+              <td>
+                <a class="candidate-name" href="/interpreters/{{ c.interpreter.interpreter_id }}">{{ c.interpreter.name }}</a>
+                <span class="info-icon" title="{{ c.info }}">i</span>
+              </td>
+              <td class="muted">{{ c.interpreter.home_city }}</td>
+              <td>€{{ '%.0f'|format(c.interpreter.rate_eur_per_hour) }}/h</td>
+              <td>
+                {% if c.reliability.has_history %}
+                <span class="tag {{ 'rel-good' if c.reliability.points >= 0 else 'rel-bad' }}">{{ '%+.0f'|format(c.reliability.points) }} pts</span>
+                {% else %}
+                <span class="tag">new</span>
+                {% endif %}
+              </td>
+              <td>
+                <form method="post" action="/jobs/{{ job.job_id }}/validate" class="inline">
+                  <input type="hidden" name="interpreter_id" value="{{ c.interpreter.interpreter_id }}">
+                  <button type="submit" class="secondary">Check</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if result %}
+      <div class="result-box {{ result.status.value }}">
+        <span class="result-state">{{ result.status.value }}</span>
+        {% if result.reasons %}
+        <ul>{% for r in result.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}
+        <p>No issues found.</p>
+        {% endif %}
+      </div>
+
+      {% if result.status != ValidationStatus.REJECTED %}
+      <form method="post" action="/jobs/{{ job.job_id }}/assign" class="action-row">
+        <input type="hidden" name="interpreter_id" value="{{ checked_interpreter_id }}">
+        {% if result.status == ValidationStatus.WARNING %}
+        <input type="hidden" name="confirm_warning" value="1">
+        {% endif %}
+        <button type="submit" class="{{ 'warn-confirm' if result.status == ValidationStatus.WARNING else '' }}">
+          {% if result.status == ValidationStatus.WARNING %}Proceed anyway and confirm{% else %}Confirm assignment{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <p class="muted">This assignment cannot be saved until the rejection reason above is resolved.</p>
+      {% endif %}
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

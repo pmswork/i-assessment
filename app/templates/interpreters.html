@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-header">
+  <div>
+    <p class="eyebrow">Roster</p>
+    <h1>Interpreters</h1>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Interpreter</th>
+          <th>Language</th>
+          <th>Home</th>
+          <th>Rate</th>
+          <th>Availability</th>
+          <th>Booked</th>
+          <th>Reliability</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="cell-primary">
+            <a href="/interpreters/{{ row.interpreter.interpreter_id }}">{{ row.interpreter.name }}</a>
+            <div class="muted">{{ row.interpreter.interpreter_id }}</div>
+          </td>
+          <td>{{ row.interpreter.language }}{% if row.interpreter.sworn %}<span class="tag sworn">sworn</span>{% endif %}</td>
+          <td>{{ row.interpreter.home_city }}</td>
+          <td>EUR {{ '%.0f'|format(row.interpreter.rate_eur_per_hour) }}/h</td>
+          <td>
+            {% for day, window in row.interpreter.availability|dictsort %}
+            <div>{{ day }} {{ window[0].strftime('%H:%M') }}-{{ window[1].strftime('%H:%M') }}</div>
+            {% else %}
+            <span class="muted">No availability</span>
+            {% endfor %}
+          </td>
+          <td>
+            {{ row.workload_min }} min
+            {% if row.schedule %}
+            <div class="muted">{{ row.schedule|length }} job{{ 's' if row.schedule|length != 1 else '' }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.reliability.has_history %}
+            <span class="tag {{ 'rel-good' if row.reliability.points >= 0 else 'rel-bad' }}">{{ '%+.1f'|format(row.reliability.points) }} pts</span>
+            {% else %}
+            <span class="tag">new</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

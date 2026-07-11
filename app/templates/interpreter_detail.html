@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back-link" href="/">&lt; Back to job list</a>
+
+<div class="section-header">
+  <div>
+    <p class="eyebrow">Interpreter profile</p>
+    <h1>{{ interpreter.name }}</h1>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Basic info</h2>
+    </div>
+    <dl class="detail-list">
+      <div>
+        <dt>Language</dt>
+        <dd>{{ interpreter.language }}{% if interpreter.sworn %} <span class="tag sworn">sworn</span>{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Rate</dt>
+        <dd>€{{ '%.0f'|format(interpreter.rate_eur_per_hour) }}/h</dd>
+      </div>
+      <div>
+        <dt>Home city</dt>
+        <dd>{{ interpreter.home_city }}</dd>
+      </div>
+      <div>
+        <dt>Currently booked</dt>
+        <dd>{{ workload_min }} min ({{ schedule|length }} job{{ 's' if schedule|length != 1 else '' }})</dd>
+      </div>
+      {% for day, window in interpreter.availability|dictsort %}
+      <div>
+        <dt>Availability {{ day }}</dt>
+        <dd>{{ window[0].strftime('%H:%M') }}-{{ window[1].strftime('%H:%M') }}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+
+    <div class="panel-heading">
+      <h2>Current schedule</h2>
+    </div>
+    <div class="panel-body">
+      {% if schedule %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Job</th><th>When</th><th>Language</th><th>Modality</th></tr>
+          </thead>
+          <tbody>
+            {% for job in schedule %}
+            <tr>
+              <td><a href="/jobs/{{ job.job_id }}">{{ job.job_id }}</a></td>
+              <td>{{ job.date }} {{ job.start_time.strftime('%H:%M') }}-{{ job.end_time.strftime('%H:%M') }}</td>
+              <td>{{ job.language }}{% if job.sworn_required %}<span class="tag sworn">sworn</span>{% endif %}</td>
+              <td><span class="tag {{ 'onsite' if job.is_on_site else 'remote' }}">{{ job.modality }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">No jobs currently assigned.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Reliability</h2>
+    </div>
+    <div class="panel-body">
+      {% if reliability.has_history %}
+      <p>
+        <span class="tag {{ 'rel-good' if reliability.points >= 0 else 'rel-bad' }}">{{ '%+.1f'|format(reliability.points) }} pts</span>
+        from {{ reliability.sample_size }} recorded event{{ 's' if reliability.sample_size != 1 else '' }}
+      </p>
+      <ul class="reasons">
+        <li>{{ reliability.completed }} completed</li>
+        <li>{{ reliability.no_show }} no-show</li>
+        <li>{{ reliability.late_cancellation }} late cancellation</li>
+        <li>{{ reliability.declined }} declined</li>
+      </ul>
+      {% else %}
+      <p class="muted">No recorded history yet — treated as neutral (0 pts), not penalised, until outcomes start
+        coming in.</p>
+      {% endif %}
+    </div>
+
+    {% if events %}
+    <div class="panel-heading">
+      <h2>Event log</h2>
+    </div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>When</th><th>Job</th><th>Event</th></tr></thead>
+          <tbody>
+            {% for e in events %}
+            <tr>
+              <td>{{ e.occurred_at[:19] }}</td>
+              <td><a href="/jobs/{{ e.job_id }}">{{ e.job_id }}</a></td>
+              <td>{{ e.event_type }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

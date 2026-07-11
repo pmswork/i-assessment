@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back-link" href="/admin">&lt; Back to admin</a>
+<div class="section-header">
+  <div>
+    <p class="eyebrow">{{ 'New job' if is_new else 'Edit job' }}</p>
+    <h1>{{ values.job_id if values.job_id else 'New job' }}</h1>
+  </div>
+</div>
+
+{% if errors %}
+<div class="result-box rejected">
+  <span class="result-state">rejected</span>
+  <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-body">
+    <form method="post" action="{{ '/admin/jobs/new' if is_new else '/admin/jobs/' + values.job_id + '/edit' }}">
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="job_id">Job ID</label>
+          <input type="text" name="job_id" id="job_id" value="{{ values.job_id }}" {{ 'readonly' if not is_new else '' }} required>
+        </div>
+        <div class="settings-field">
+          <label for="date">Date</label>
+          <input type="date" name="date" id="date" value="{{ values.date }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="start_time">Start time</label>
+          <input type="time" name="start_time" id="start_time" value="{{ values.start_time }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="end_time">End time</label>
+          <input type="time" name="end_time" id="end_time" value="{{ values.end_time }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="language">Language</label>
+          <input type="text" name="language" id="language" value="{{ values.language }}" required>
+        </div>
+        <div class="settings-field">
+          <label><input type="checkbox" name="sworn_required" {{ 'checked' if values.sworn_required else '' }}> Sworn required</label>
+        </div>
+        <div class="settings-field">
+          <label for="modality">Modality</label>
+          <select name="modality" id="modality">
+            <option value="on-site" {{ 'selected' if values.modality == 'on-site' else '' }}>on-site</option>
+            <option value="remote" {{ 'selected' if values.modality == 'remote' else '' }}>remote</option>
+          </select>
+        </div>
+        <div class="settings-field">
+          <label for="client">Client</label>
+          <input type="text" name="client" id="client" value="{{ values.client }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="address">Address</label>
+          <input type="text" name="address" id="address" value="{{ values.address }}">
+        </div>
+        <div class="settings-field">
+          <label for="city">City</label>
+          <input type="text" name="city" id="city" value="{{ values.city }}">
+        </div>
+        <div class="settings-field">
+          <label for="lat">Latitude</label>
+          <input type="text" name="lat" id="lat" value="{{ values.lat }}">
+        </div>
+        <div class="settings-field">
+          <label for="lon">Longitude</label>
+          <input type="text" name="lon" id="lon" value="{{ values.lon }}">
+        </div>
+      </div>
+      <p class="muted">Latitude/longitude are required for on-site jobs (used for travel-time estimates and the
+        coverage gauge); leave blank for remote jobs.</p>
+      <div class="action-row">
+        <button type="submit">{{ 'Create job' if is_new else 'Save changes' }}</button>
+        <a class="button-link secondary" href="/admin">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

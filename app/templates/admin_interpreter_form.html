@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back-link" href="/admin">&lt; Back to admin</a>
+<div class="section-header">
+  <div>
+    <p class="eyebrow">{{ 'New interpreter' if is_new else 'Edit interpreter' }}</p>
+    <h1>{{ values.name if values.name else 'New interpreter' }}</h1>
+  </div>
+</div>
+
+{% if errors %}
+<div class="result-box rejected">
+  <span class="result-state">rejected</span>
+  <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-body">
+    <form method="post" action="{{ '/admin/interpreters/new' if is_new else '/admin/interpreters/' + values.interpreter_id + '/edit' }}">
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="interpreter_id">Interpreter ID</label>
+          <input type="text" name="interpreter_id" id="interpreter_id" value="{{ values.interpreter_id }}" {{ 'readonly' if not is_new else '' }} required>
+        </div>
+        <div class="settings-field">
+          <label for="name">Name</label>
+          <input type="text" name="name" id="name" value="{{ values.name }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="language">Language</label>
+          <input type="text" name="language" id="language" value="{{ values.language }}" required>
+        </div>
+        <div class="settings-field">
+          <label><input type="checkbox" name="sworn" {{ 'checked' if values.sworn else '' }}> Sworn</label>
+        </div>
+        <div class="settings-field">
+          <label for="home_city">Home city</label>
+          <input type="text" name="home_city" id="home_city" value="{{ values.home_city }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="home_lat">Home latitude</label>
+          <input type="text" name="home_lat" id="home_lat" value="{{ values.home_lat }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="home_lon">Home longitude</label>
+          <input type="text" name="home_lon" id="home_lon" value="{{ values.home_lon }}" required>
+        </div>
+        <div class="settings-field">
+          <label for="rate_eur_per_hour">Rate (EUR/h)</label>
+          <input type="text" name="rate_eur_per_hour" id="rate_eur_per_hour" value="{{ values.rate_eur_per_hour }}" required>
+        </div>
+      </div>
+
+      <div class="panel-heading availability-heading"><h2>Availability</h2></div>
+      <p class="muted">Leave both fields blank for a day to mark the interpreter unavailable that day.</p>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="avail_day1_start">{{ day1 }} — start</label>
+          <input type="time" name="avail_day1_start" id="avail_day1_start" value="{{ values.avail_day1_start }}">
+        </div>
+        <div class="settings-field">
+          <label for="avail_day1_end">{{ day1 }} — end</label>
+          <input type="time" name="avail_day1_end" id="avail_day1_end" value="{{ values.avail_day1_end }}">
+        </div>
+        <div class="settings-field">
+          <label for="avail_day2_start">{{ day2 }} — start</label>
+          <input type="time" name="avail_day2_start" id="avail_day2_start" value="{{ values.avail_day2_start }}">
+        </div>
+        <div class="settings-field">
+          <label for="avail_day2_end">{{ day2 }} — end</label>
+          <input type="time" name="avail_day2_end" id="avail_day2_end" value="{{ values.avail_day2_end }}">
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button type="submit">{{ 'Create interpreter' if is_new else 'Save changes' }}</button>
+        <a class="button-link secondary" href="/admin">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

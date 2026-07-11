@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-header">
+  <div>
+    <p class="eyebrow">Data management</p>
+    <h1>Admin</h1>
+  </div>
+</div>
+<p class="muted">Import/export the underlying CSVs, or edit individual jobs and interpreters. This is a fallback for
+  fixing mistakes or onboarding new data mid-session — most of the time the supplied CSVs and auto-assignment are
+  all a planner needs. Import replaces the whole list atomically: either every row validates or none of it is
+  applied, with specific reasons either way.</p>
+
+<section class="panel">
+  <div class="panel-heading"><h2>Jobs</h2></div>
+  <div class="panel-body">
+    <div class="action-row">
+      <form method="post" action="/admin/import/jobs" enctype="multipart/form-data" class="inline">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit" class="secondary">Import jobs.csv</button>
+      </form>
+      <a class="button-link secondary" href="/admin/export/jobs.csv">Export jobs.csv</a>
+      <a class="button-link" href="/admin/jobs/new">+ Add job</a>
+    </div>
+    {% if job_import_errors %}
+    <div class="result-box rejected">
+      <span class="result-state">import rejected</span>
+      <ul>{% for e in job_import_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Job</th><th>When</th><th>Language</th><th>Modality</th><th>Client</th><th>Assigned</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for row in jobs_rows %}
+          <tr>
+            <td class="cell-primary">{{ row.job.job_id }}</td>
+            <td>{{ row.job.date }} {{ row.job.start_time.strftime('%H:%M') }}-{{ row.job.end_time.strftime('%H:%M') }}</td>
+            <td>{{ row.job.language }}{% if row.job.sworn_required %}<span class="tag sworn">sworn</span>{% endif %}</td>
+            <td><span class="tag {{ 'onsite' if row.job.is_on_site else 'remote' }}">{{ row.job.modality }}</span></td>
+            <td>{{ row.job.client }}</td>
+            <td>{{ row.interpreter.name if row.interpreter else '—' }}</td>
+            <td>
+              <a href="/admin/jobs/{{ row.job.job_id }}/edit">edit</a>
+              <form method="post" action="/admin/jobs/{{ row.job.job_id }}/delete" class="inline"
+                    onsubmit="return confirm('Delete {{ row.job.job_id }}?');">
+                <button type="submit" class="secondary">delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-heading"><h2>Interpreters</h2></div>
+  <div class="panel-body">
+    <div class="action-row">
+      <form method="post" action="/admin/import/interpreters" enctype="multipart/form-data" class="inline">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit" class="secondary">Import interpreters.csv</button>
+      </form>
+      <a class="button-link secondary" href="/admin/export/interpreters.csv">Export interpreters.csv</a>
+      <a class="button-link" href="/admin/interpreters/new">+ Add interpreter</a>
+    </div>
+    {% if interpreter_import_errors %}
+    <div class="result-box rejected">
+      <span class="result-state">import rejected</span>
+      <ul>{% for e in interpreter_import_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Language</th><th>Rate</th><th>Home</th><th>Booked</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for row in interpreter_rows %}
+          <tr>
+            <td class="cell-primary">{{ row.interpreter.interpreter_id }}</td>
+            <td><a href="/interpreters/{{ row.interpreter.interpreter_id }}">{{ row.interpreter.name }}</a></td>
+            <td>{{ row.interpreter.language }}{% if row.interpreter.sworn %}<span class="tag sworn">sworn</span>{% endif %}</td>
+            <td>€{{ '%.0f'|format(row.interpreter.rate_eur_per_hour) }}/h</td>
+            <td>{{ row.interpreter.home_city }}</td>
+            <td>{{ row.workload_min }} min</td>
+            <td>
+              <a href="/admin/interpreters/{{ row.interpreter.interpreter_id }}/edit">edit</a>
+              <form method="post" action="/admin/interpreters/{{ row.interpreter.interpreter_id }}/delete" class="inline"
+                    onsubmit="return confirm('Delete {{ row.interpreter.interpreter_id }}? Their assigned jobs will need reassignment.');">
+                <button type="submit" class="secondary">delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-header">
+  <div>
+    <p class="eyebrow">Interpreter planning</p>
+    <h1>Assignment board</h1>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-box"><span>Total jobs</span><strong>{{ total_count }}</strong></div>
+  <div class="stat-box"><span>Assigned</span><strong>{{ assigned_count }}</strong></div>
+  <div class="stat-box"><span>Need a human decision</span><strong>{{ unassigned_count }}</strong></div>
+</div>
+<p class="muted" style="margin: -0.4rem 0 1rem;">The system assigns everything it safely can on its own; manual
+  assignment is the fallback for what's left — resolve those first. Click any row to open it.</p>
+
+<section class="panel">
+  <div class="toolbar">
+    <form method="post" action="/auto-assign" class="inline">
+      <button type="submit">Re-run auto-assignment</button>
+    </form>
+    <span class="muted">Recomputes the whole schedule from scratch with the current CSV data.</span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Job</th>
+          <th>When</th>
+          <th>Language</th>
+          <th>Modality</th>
+          <th>Client / City</th>
+          <th>Coverage</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="job-row">
+          <td class="cell-primary"><a class="row-link" href="/jobs/{{ row.job.job_id }}">{{ row.job.job_id }}</a></td>
+          <td>{{ row.job.date }} {{ row.job.start_time.strftime('%H:%M') }}-{{ row.job.end_time.strftime('%H:%M') }}</td>
+          <td>{{ row.job.language }}{% if row.job.sworn_required %}<span class="tag sworn">sworn</span>{% endif %}</td>
+          <td><span class="tag {{ 'onsite' if row.job.is_on_site else 'remote' }}">{{ row.job.modality }}</span></td>
+          <td>{{ row.job.client }}{% if row.job.city %} - {{ row.job.city }}{% endif %}</td>
+          <td>
+            <div class="coverage-cell"
+                 title="{{ row.coverage_label }} — qualified (language/sworn) interpreters within 50km straight-line. Approximate: ignores availability and current bookings.">
+              <span class="coverage-gauge level-{{ row.coverage_gauge.level }}">
+                {% for i in range(row.coverage_gauge.segments_total) %}
+                <span class="coverage-gauge__bar {{ 'is-lit' if i < row.coverage_gauge.segments_lit else '' }}"></span>
+                {% endfor %}
+              </span>
+              <span class="coverage-count">{{ row.coverage_label }}</span>
+            </div>
+          </td>
+          <td>
+            {% if row.interpreter %}
+              <a class="status-label assigned" href="/interpreters/{{ row.interpreter.interpreter_id }}">{{ row.interpreter.name }}</a>
+              <span class="tag source-{{ row.source }}">{{ row.source }}</span>
+            {% else %}
+              <span class="status-label unassigned">needs decision</span>
+              {% if row.reasons_preview %}
+              <ul class="reasons">
+                {% for r in row.reasons_preview %}<li>{{ r }}</li>{% endfor %}
+                {% if row.reasons_more_count %}<li>+{{ row.reasons_more_count }} more — open for details</li>{% endif %}
+              </ul>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
