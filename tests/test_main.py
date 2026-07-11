@@ -311,6 +311,10 @@ def test_admin_dashboard_loads_with_jobs_and_interpreters():
     assert response.status_code == 200
     assert "J001" in response.text
     assert "INT-01" in response.text
+    assert 'action="/admin/jobs/delete-all"' in response.text
+    assert "Delete all jobs" in response.text
+    assert 'action="/admin/interpreters/delete-all"' in response.text
+    assert "Delete all interpreters" in response.text
 
 
 def test_admin_job_create_edit_delete_flow():

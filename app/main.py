@@ -821,16 +821,16 @@ def admin_update_job(
     )
 
 
-@app.post("/admin/jobs/{job_id}/delete")
-def admin_delete_job(job_id: str):
-    store.delete_job(job_id)
+@app.post("/admin/jobs/delete-all")
+def admin_delete_all_jobs():
+    store.replace_jobs([])
     store.persist_now()
     return RedirectResponse("/admin", status_code=303)
 
 
-@app.post("/admin/jobs/delete-all")
-def admin_delete_all_jobs():
-    store.replace_jobs([])
+@app.post("/admin/jobs/{job_id}/delete")
+def admin_delete_job(job_id: str):
+    store.delete_job(job_id)
     store.persist_now()
     return RedirectResponse("/admin", status_code=303)
 
@@ -1043,15 +1043,15 @@ def admin_update_interpreter(
     )
 
 
-@app.post("/admin/interpreters/{interpreter_id}/delete")
-def admin_delete_interpreter(interpreter_id: str):
-    store.delete_interpreter(interpreter_id)
+@app.post("/admin/interpreters/delete-all")
+def admin_delete_all_interpreters():
+    store.replace_interpreters([])
     store.persist_now()
     return RedirectResponse("/admin", status_code=303)
 
 
-@app.post("/admin/interpreters/delete-all")
-def admin_delete_all_interpreters():
-    store.replace_interpreters([])
+@app.post("/admin/interpreters/{interpreter_id}/delete")
+def admin_delete_interpreter(interpreter_id: str):
+    store.delete_interpreter(interpreter_id)
     store.persist_now()
     return RedirectResponse("/admin", status_code=303)
