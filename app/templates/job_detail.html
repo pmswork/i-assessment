@@ -161,6 +161,17 @@
         {% endif %}
       </div>
 
+      {% if planner_questions %}
+      <div class="planner-questions">
+        <p class="planner-questions__title">Ask before confirming</p>
+        <ul>
+          {% for question in planner_questions %}
+          <li>{{ question }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
       {% if result.status != ValidationStatus.REJECTED %}
       <form method="post" action="/jobs/{{ job.job_id }}/assign" class="action-row">
         <input type="hidden" name="interpreter_id" value="{{ checked_interpreter_id }}">

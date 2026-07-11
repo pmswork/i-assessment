@@ -131,6 +131,38 @@ def _candidate_row(job, interpreter):
     }
 
 
+def _planner_questions_for(result) -> list[str]:
+    if result is None or result.status != ValidationStatus.WARNING:
+        return []
+
+    questions: list[str] = []
+    for reason in result.reasons:
+        lower = reason.lower()
+        if "tight travel" in lower or "not enough travel" in lower or "tight commute" in lower:
+            questions.append("Can you confirm you can still make this timing in practice, including realistic travel and arrival buffer?")
+        elif "remote job" in lower and "transit" in lower:
+            questions.append("Can you confirm whether you can take the remote call properly from where you will be between appointments?")
+        elif "cheaper" in lower:
+            questions.append("Is there a reason to prefer this interpreter despite the cheaper available alternative?")
+        elif "workload" in lower:
+            questions.append("Can you confirm this workload is still reasonable for the interpreter that day?")
+        elif "long one-way distance" in lower:
+            questions.append("Can you confirm the interpreter is willing to travel this distance for the appointment?")
+        elif "court hearing" in lower or "rechtbank" in lower or "zitting" in lower:
+            questions.append("Can you confirm the interpreter has enough buffer if the hearing runs longer than planned?")
+        elif "preparation" in lower or "voorbereiding" in lower:
+            questions.append("Can you confirm the interpreter has enough preparation time before the hearing?")
+
+    if not questions:
+        questions.append("Can you confirm with the interpreter that this assignment is still workable despite the warning above?")
+
+    deduped: list[str] = []
+    for question in questions:
+        if question not in deduped:
+            deduped.append(question)
+    return deduped
+
+
 @app.get("/jobs/{job_id}")
 def job_detail(request: Request, job_id: str):
     return _render_job_detail(request, job_id)
@@ -169,6 +201,7 @@ def _render_job_detail(
             "suggestion": suggestion,
             "checked_interpreter_id": checked_interpreter_id,
             "result": result,
+            "planner_questions": _planner_questions_for(result),
             "ValidationStatus": ValidationStatus,
         },
     )
@@ -580,6 +613,13 @@ def admin_delete_job(job_id: str):
     return RedirectResponse("/admin", status_code=303)
 
 
+@app.post("/admin/jobs/delete-all")
+def admin_delete_all_jobs():
+    store.replace_jobs([])
+    store.persist_now()
+    return RedirectResponse("/admin", status_code=303)
+
+
 def _interpreter_values_from(interpreter: Interpreter | None) -> dict:
     if interpreter is None:
         return {
@@ -786,5 +826,12 @@ def admin_update_interpreter(
 @app.post("/admin/interpreters/{interpreter_id}/delete")
 def admin_delete_interpreter(interpreter_id: str):
     store.delete_interpreter(interpreter_id)
+    store.persist_now()
+    return RedirectResponse("/admin", status_code=303)
+
+
+@app.post("/admin/interpreters/delete-all")
+def admin_delete_all_interpreters():
+    store.replace_interpreters([])
     store.persist_now()
     return RedirectResponse("/admin", status_code=303)

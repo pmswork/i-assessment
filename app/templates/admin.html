@@ -21,6 +21,10 @@
       </form>
       <a class="button-link secondary" href="/admin/export/jobs.csv">Export jobs.csv</a>
       <a class="button-link" href="/admin/jobs/new">+ Add job</a>
+      <form method="post" action="/admin/jobs/delete-all" class="inline"
+            onsubmit="return confirm('Delete all jobs? This also clears all assignments and unassigned reasons.');">
+        <button type="submit" class="danger-button">Delete all jobs</button>
+      </form>
     </div>
     {% if job_import_errors %}
     <div class="result-box rejected">
@@ -68,6 +72,10 @@
       </form>
       <a class="button-link secondary" href="/admin/export/interpreters.csv">Export interpreters.csv</a>
       <a class="button-link" href="/admin/interpreters/new">+ Add interpreter</a>
+      <form method="post" action="/admin/interpreters/delete-all" class="inline"
+            onsubmit="return confirm('Delete all interpreters? Assigned jobs will need reassignment.');">
+        <button type="submit" class="danger-button">Delete all interpreters</button>
+      </form>
     </div>
     {% if interpreter_import_errors %}
     <div class="result-box rejected">

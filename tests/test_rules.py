@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import time
 
 from app.rules import ValidationStatus, validate_assignment
@@ -133,3 +134,28 @@ def test_workload_imbalance_warning():
     )
     assert result.status == ValidationStatus.WARNING
     assert any("workload" in r.lower() for r in result.reasons)
+
+
+def test_court_work_warns_about_overrun_and_preparation_time():
+    interpreter = make_interpreter()
+    job = replace(make_job(start=time(9, 0), end=time(10, 0)), client="Rechtbank Rotterdam - zitting")
+
+    result = validate_assignment(job, interpreter, schedule=[])
+
+    assert result.status == ValidationStatus.WARNING
+    assert any("rechtbankwerk" in r.lower() or "court hearing" in r.lower() for r in result.reasons)
+    assert any("voorbereidingstijd" in r.lower() or "preparation time" in r.lower() for r in result.reasons)
+
+
+def test_court_preparation_warning_mentions_short_gap():
+    interpreter = make_interpreter()
+    existing = make_job(job_id="J-before", start=time(8, 0), end=time(8, 50), modality="remote")
+    job = replace(
+        make_job(job_id="J-court", start=time(9, 0), end=time(10, 0)),
+        client="Court hearing",
+    )
+
+    result = validate_assignment(job, interpreter, schedule=[existing])
+
+    assert result.status == ValidationStatus.WARNING
+    assert any("only ~10 min" in r for r in result.reasons)

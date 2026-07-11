@@ -138,6 +138,26 @@ def test_warning_assignment_requires_explicit_confirmation():
     assert "Assigned to <a href=\"/interpreters/INT-02\">Karim Haddad</a>" not in detail.text
 
 
+def test_warning_check_shows_planner_questions():
+    client.post("/auto-assign")
+    client.post("/jobs/J001/unassign")
+
+    response = client.post("/jobs/J001/validate", data={"interpreter_id": "INT-02"})
+
+    assert response.status_code == 200
+    assert "Ask before confirming" in response.text
+    assert "Can you confirm" in response.text
+
+
+def test_court_job_check_shows_court_and_preparation_questions():
+    response = client.post("/jobs/J007/validate", data={"interpreter_id": "INT-06"})
+
+    assert response.status_code == 200
+    assert "Court hearing" in response.text or "rechtbankwerk" in response.text
+    assert "preparation time" in response.text.lower() or "voorbereidingstijd" in response.text.lower()
+    assert "enough buffer" in response.text
+
+
 def test_unknown_route_returns_404():
     response = client.get("/definitely-not-a-route")
     assert response.status_code == 404
@@ -337,3 +357,35 @@ def test_admin_import_jobs_round_trips_the_original_csv():
     assert "import rejected" not in dashboard.text
     assert "J001" in dashboard.text
     assert "J110" in dashboard.text
+
+
+def test_admin_bulk_delete_jobs_and_interpreters_then_restore_csvs():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    jobs_csv = (root / "jobs.csv").read_bytes()
+    interpreters_csv = (root / "interpreters.csv").read_bytes()
+
+    delete_jobs = client.post("/admin/jobs/delete-all", follow_redirects=False)
+    assert delete_jobs.status_code == 303
+    dashboard = client.get("/admin")
+    assert "J001" not in dashboard.text
+
+    delete_interpreters = client.post("/admin/interpreters/delete-all", follow_redirects=False)
+    assert delete_interpreters.status_code == 303
+    dashboard = client.get("/admin")
+    assert "INT-01" not in dashboard.text
+
+    client.post(
+        "/admin/import/interpreters",
+        files={"file": ("interpreters.csv", io.BytesIO(interpreters_csv), "text/csv")},
+        follow_redirects=False,
+    )
+    client.post(
+        "/admin/import/jobs",
+        files={"file": ("jobs.csv", io.BytesIO(jobs_csv), "text/csv")},
+        follow_redirects=False,
+    )
+    restored = client.get("/admin")
+    assert "J001" in restored.text
+    assert "INT-01" in restored.text

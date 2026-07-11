@@ -161,6 +161,8 @@ def check_warnings(
                 f"to {job.city}: ~{round(home_distance_km)} km."
             )
 
+    warnings.extend(_court_work_warnings(job, interpreter, schedule))
+
     if all_interpreters is not None and workload_lookup is not None:
         cheaper = _cheaper_alternative(job, interpreter, all_interpreters, workload_lookup)
         if cheaper is not None:
@@ -235,6 +237,54 @@ def _home_distance_km(interpreter: Interpreter, job: Job) -> float:
 def _label(job: Job) -> str:
     place = job.city if job.is_on_site else "remote"
     return f"{job.job_id} ({place}, {job.start_time.strftime('%H:%M')}–{job.end_time.strftime('%H:%M')})"
+
+
+def _is_court_work(job: Job) -> bool:
+    text = " ".join([job.client, job.address, job.city]).lower()
+    return any(marker in text for marker in ("rechtbank", "zitting", "court", "hearing"))
+
+
+def _prep_gap_before(job: Job, interpreter: Interpreter, schedule: list[Job]) -> float | None:
+    window = interpreter.availability_on(job.date)
+    same_day_before = [
+        other
+        for other in schedule
+        if other.date == job.date and other.job_id != job.job_id and other.end_dt <= job.start_dt
+    ]
+    if same_day_before:
+        previous = max(same_day_before, key=lambda other: other.end_dt)
+        return (job.start_dt - previous.end_dt).total_seconds() / 60
+    if window is None:
+        return None
+    return (job.start_dt - datetime.combine(job.date, window[0])).total_seconds() / 60
+
+
+def _court_work_warnings(job: Job, interpreter: Interpreter, schedule: list[Job]) -> list[str]:
+    if not _is_court_work(job):
+        return []
+
+    warnings = [
+        (
+            "Court hearing / rechtbankwerk: hearings can run longer than planned. "
+            f"Confirm {interpreter.name} has enough buffer after this job if the zitting overruns."
+        )
+    ]
+    prep_gap = _prep_gap_before(job, interpreter, schedule)
+    if prep_gap is None:
+        warnings.append(
+            f"Preparation time / voorbereidingstijd: confirm {interpreter.name} has reviewed the case material before the hearing."
+        )
+    elif prep_gap < 30:
+        warnings.append(
+            f"Preparation time / voorbereidingstijd: only ~{round(prep_gap)} min is free before this hearing. "
+            f"Ask {interpreter.name} if that is enough preparation time."
+        )
+    else:
+        warnings.append(
+            f"Preparation time / voorbereidingstijd: ~{round(prep_gap)} min appears free before this hearing. "
+            f"Confirm with {interpreter.name} that this is enough."
+        )
+    return warnings
 
 
 def _day_timeline(job: Job, schedule: list[Job]) -> list[Job]:
