@@ -22,7 +22,7 @@
 <section class="panel">
   <div class="panel-heading"><h2>Thresholds</h2></div>
   <div class="panel-body">
-    <form method="post" action="/settings">
+    <form method="post" action="/settings" id="settings-form">
       <div class="settings-grid">
         {% for f in fields %}
         <div class="settings-field">
@@ -36,7 +36,7 @@
           {% else %}
           <input type="number" step="any" name="{{ f.name }}" id="{{ f.name }}" value="{{ f.value }}" required>
           {% endif %}
-          <p class="muted">{{ f.help_text }}</p>
+          <p class="muted">{{ f.help_text|replace('\n', '<br>')|safe }}</p>
         </div>
         {% endfor %}
       </div>
@@ -46,4 +46,13 @@
     </form>
   </div>
 </section>
+<script>
+  document.getElementById("settings-form").addEventListener("submit", function(event) {
+    var autonomy = document.getElementById("auto_assign_risk_level");
+    if (autonomy && autonomy.value === "3") {
+      var ok = confirm("God-Mode allows manual assignment through validation blocks except overlapping bookings. Are you sure?");
+      if (!ok) event.preventDefault();
+    }
+  });
+</script>
 {% endblock %}

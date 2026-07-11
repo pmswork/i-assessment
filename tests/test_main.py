@@ -24,6 +24,7 @@ import io
 
 from fastapi.testclient import TestClient
 
+from app import settings
 from app.main import app
 
 client = TestClient(app)
@@ -98,6 +99,40 @@ def test_rejected_assignment_is_never_persisted_via_direct_post():
     detail = client.get("/jobs/J013")
     assert "Currently assigned" not in detail.text
     assert "Assigned to" not in detail.text
+
+
+def test_god_mode_can_manually_override_non_overlap_rejection():
+    settings.update(auto_assign_risk_level=3)
+    client.post("/jobs/J013/unassign")
+
+    validate_resp = client.post("/jobs/J013/validate", data={"interpreter_id": "INT-07"})
+    assert validate_resp.status_code == 200
+    assert "God-Mode assign anyway" in validate_resp.text
+
+    assign_resp = client.post(
+        "/jobs/J013/assign",
+        data={"interpreter_id": "INT-07", "confirm_god_mode": "1"},
+        follow_redirects=False,
+    )
+
+    assert assign_resp.status_code == 303
+    detail = client.get("/jobs/J013")
+    assert "Assigned to <a href=\"/interpreters/INT-07\">Selin Demir</a>" in detail.text
+    client.post("/jobs/J013/unassign")
+
+
+def test_god_mode_cannot_override_overlapping_booking():
+    settings.update(auto_assign_risk_level=3)
+    client.post("/auto-assign")
+
+    response = client.post(
+        "/jobs/J002/assign",
+        data={"interpreter_id": "INT-02", "confirm_god_mode": "1"},
+    )
+
+    assert response.status_code == 200
+    assert "already booked" in response.text
+    assert "God-Mode assign anyway" not in response.text
 
 
 def test_manual_assign_then_outcome_flow_updates_reliability_profile():
@@ -229,6 +264,7 @@ def test_settings_page_loads_and_shows_current_values():
     assert response.status_code == 200
     assert "Coverage radius" in response.text
     assert "Auto-assignment autonomy" in response.text
+    assert "God-Mode" in response.text
     assert "Urgent unassigned threshold" in response.text
 
 

@@ -14,10 +14,10 @@ def test_defaults_are_returned_without_any_update():
 
 
 def test_update_changes_only_the_given_fields():
-    settings.update(travel_buffer_min=30.0, auto_assign_risk_level=1, urgent_unassigned_days=5)
+    settings.update(travel_buffer_min=30.0, auto_assign_risk_level=3, urgent_unassigned_days=5)
     current = settings.get()
     assert current.travel_buffer_min == 30.0
-    assert current.auto_assign_risk_level == 1
+    assert current.auto_assign_risk_level == 3
     assert current.urgent_unassigned_days == 5
     assert current.long_distance_km == settings.Settings().long_distance_km  # untouched
 

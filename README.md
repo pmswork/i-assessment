@@ -577,9 +577,14 @@ controls how much judgement the system may exercise alone — *Careful* only
 auto-assigns clean matches and leaves every warning to a planner;
 *Balanced* also auto-assigns warnings that are mainly the interpreter's own
 choice (long commute, long distance); *Flexible* auto-assigns any
-warning-level match. Whatever it can't decide itself is left unassigned
+warning-level match. *God-Mode* keeps auto-assignment flexible and also
+lets a planner manually override validation blocks when real-world context
+requires it, except overlapping bookings for the same interpreter. Whatever
+auto-assignment can't decide itself is left unassigned
 with a "needs planner review" reason naming the candidate it would have
-picked.
+picked. Unassigned jobs inside the configured **urgent unassigned threshold
+(days)** are highlighted in red on the overview so planners see the
+time-critical decisions first.
 
 ## Manual assignment is the fallback, not the default path
 

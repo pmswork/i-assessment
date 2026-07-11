@@ -193,14 +193,21 @@
       </div>
       {% endif %}
 
-      {% if result.status != ValidationStatus.REJECTED %}
-      <form method="post" action="/jobs/{{ job.job_id }}/assign" class="action-row">
+      {% if result.status != ValidationStatus.REJECTED or god_mode_can_assign %}
+      <form method="post" action="/jobs/{{ job.job_id }}/assign" class="action-row"
+            {% if result.status == ValidationStatus.WARNING %}
+            onsubmit="return confirm('This assignment has warnings. Are you sure you want to assign this interpreter?');"
+            {% elif god_mode_can_assign %}
+            onsubmit="return confirm('God-Mode will override validation blocks for this assignment. Are you sure?');"
+            {% endif %}>
         <input type="hidden" name="interpreter_id" value="{{ checked_interpreter_id }}">
         {% if result.status == ValidationStatus.WARNING %}
         <input type="hidden" name="confirm_warning" value="1">
+        {% elif god_mode_can_assign %}
+        <input type="hidden" name="confirm_god_mode" value="1">
         {% endif %}
-        <button type="submit" class="{{ 'warn-confirm' if result.status == ValidationStatus.WARNING else '' }}">
-          {% if result.status == ValidationStatus.WARNING %}Proceed anyway and confirm{% else %}Confirm assignment{% endif %}
+        <button type="submit" class="{{ 'warn-confirm' if result.status == ValidationStatus.WARNING or god_mode_can_assign else '' }}">
+          {% if god_mode_can_assign %}God-Mode assign anyway{% elif result.status == ValidationStatus.WARNING %}Proceed anyway and confirm{% else %}Confirm assignment{% endif %}
         </button>
       </form>
       {% else %}

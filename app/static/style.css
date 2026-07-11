@@ -739,17 +739,25 @@ button.danger-button:hover {
 .status-cell {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.6rem;
-  min-width: 250px;
+  min-width: 345px;
 }
 
-.status-cell .status-label { flex: 1 1 auto; }
+.status-cell .status-label {
+  flex: 0 0 190px;
+  max-width: 190px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 
 .status-cell .tag {
-  flex: 0 0 auto;
+  flex: 0 0 145px;
+  min-width: 145px;
   margin-left: 0;
+  overflow: hidden;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* "What do we have here" summary at the top of the job-detail page */

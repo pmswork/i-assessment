@@ -23,6 +23,7 @@ AUTO_ASSIGN_RISK_LEVELS = {
     0: "Careful - only clean matches",
     1: "Balanced - allow interpreter-choice warnings",
     2: "Flexible - allow all warning-level matches",
+    3: "God-Mode - manual override available",
 }
 
 
@@ -52,9 +53,11 @@ class FieldInfo(NamedTuple):
 FIELD_INFO: dict[str, FieldInfo] = {
     "auto_assign_risk_level": FieldInfo(
         "Auto-assignment autonomy",
-        "How much judgement the system may use by itself. Careful leaves every warning for a planner; "
-        "Balanced may auto-assign warnings that are mainly up to the interpreter, such as long commute home; "
-        "Flexible may auto-assign any warning-level match.",
+        "How much judgement the system may use by itself.\n"
+        "Careful leaves every warning for a planner.\n"
+        "Balanced may auto-assign warnings that are mainly up to the interpreter, such as long commute home.\n"
+        "Flexible may auto-assign any warning-level match.\n"
+        "God-Mode additionally lets a planner manually override validation blocks, except overlapping bookings.",
         0.0,
         AUTO_ASSIGN_RISK_LEVELS,
     ),

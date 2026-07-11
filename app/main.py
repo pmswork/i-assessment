@@ -280,6 +280,16 @@ def _planner_questions_for(result) -> list[str]:
     return deduped
 
 
+def _god_mode_enabled() -> bool:
+    return settings_module.get().auto_assign_risk_level == 3
+
+
+def _god_mode_can_assign(result) -> bool:
+    if result is None or result.status != ValidationStatus.REJECTED or not _god_mode_enabled():
+        return False
+    return not any("already booked" in reason.lower() or "overlaps" in reason.lower() for reason in result.reasons)
+
+
 @app.get("/jobs/{job_id}")
 def job_detail(request: Request, job_id: str):
     return _render_job_detail(request, job_id)
@@ -319,6 +329,7 @@ def _render_job_detail(
             "checked_interpreter_id": checked_interpreter_id,
             "result": result,
             "planner_questions": _planner_questions_for(result),
+            "god_mode_can_assign": _god_mode_can_assign(result),
             "ValidationStatus": ValidationStatus,
         },
     )
@@ -341,6 +352,7 @@ def assign(
     job_id: str,
     interpreter_id: str = Form(...),
     confirm_warning: str | None = Form(None),
+    confirm_god_mode: str | None = Form(None),
 ):
     job = _get_job_or_404(job_id)
     interpreter = _get_interpreter_or_404(interpreter_id)
@@ -349,6 +361,11 @@ def assign(
         job, interpreter, schedule, all_interpreters=list(store.interpreters.values()), workload_lookup=store
     )
     if result.status == ValidationStatus.REJECTED:
+        if _god_mode_can_assign(result) and confirm_god_mode == "1":
+            store.assign(job_id, interpreter_id, source="manual")
+            store.persist_now()
+            reliability.record_event(interpreter_id, job_id, EventType.ACCEPTED)
+            return RedirectResponse(f"/jobs/{job_id}", status_code=303)
         # Defense in depth: never persist a rejected assignment, even if a
         # client somehow posts here directly without checking first.
         return _render_job_detail(request, job_id, checked_interpreter_id=interpreter_id, result=result)
