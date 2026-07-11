@@ -39,6 +39,7 @@ def test_index_loads_and_shows_the_logo_and_coverage_column():
     assert "sort=client" in response.text
     assert "Filter" in response.text
     assert "<span>Sort</span>" not in response.text
+    assert "amstelveen-clock" in response.text
 
 
 def test_index_can_filter_for_jobs_needing_decision():
@@ -50,6 +51,16 @@ def test_index_can_filter_for_jobs_needing_decision():
     assert "J013" in response.text
     assert "needs decision" in response.text
     assert "/jobs/J001" not in response.text
+
+
+def test_index_marks_urgent_unassigned_jobs():
+    client.post("/auto-assign")
+
+    response = client.get("/?status=needs_decision&sort=job")
+
+    assert response.status_code == 200
+    assert "is-urgent" in response.text
+    assert "urgent-tag" in response.text
 
 
 def test_job_detail_hides_unqualified_interpreters_from_the_candidate_list():
@@ -217,15 +228,18 @@ def test_settings_page_loads_and_shows_current_values():
     response = client.get("/settings")
     assert response.status_code == 200
     assert "Coverage radius" in response.text
+    assert "Auto-assignment autonomy" in response.text
+    assert "Urgent unassigned threshold" in response.text
 
 
 def test_settings_update_persists_and_redirects():
     response = client.post(
         "/settings",
         data={
+            "auto_assign_risk_level": "1",
             "average_speed_kmh": "50", "fixed_overhead_min": "10", "travel_buffer_min": "20",
             "long_distance_km": "40", "workload_imbalance_threshold_min": "120",
-            "coverage_radius_km": "50", "coverage_bar_cap": "3",
+            "coverage_radius_km": "50", "coverage_bar_cap": "3", "urgent_unassigned_days": "2",
         },
         follow_redirects=False,
     )
@@ -241,9 +255,10 @@ def test_settings_update_rejects_invalid_value():
     response = client.post(
         "/settings",
         data={
+            "auto_assign_risk_level": "1",
             "average_speed_kmh": "-5", "fixed_overhead_min": "10", "travel_buffer_min": "20",
             "long_distance_km": "40", "workload_imbalance_threshold_min": "120",
-            "coverage_radius_km": "50", "coverage_bar_cap": "3",
+            "coverage_radius_km": "50", "coverage_bar_cap": "3", "urgent_unassigned_days": "2",
         },
     )
     assert response.status_code == 400

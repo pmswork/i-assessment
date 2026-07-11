@@ -126,13 +126,28 @@ a:hover { text-decoration: underline; }
 }
 
 .shell-main {
+  position: relative;
   margin-left: 210px;
   min-height: 100vh;
 }
 
 .page {
   min-height: 100vh;
-  padding: 1.35rem 1.3rem 1.3rem 1.25rem;
+  padding: 3.1rem 1.3rem 1.3rem 1.25rem;
+}
+
+.app-clock {
+  position: fixed;
+  top: 0.85rem;
+  right: 1.2rem;
+  z-index: 30;
+  min-width: 245px;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .section-header {
@@ -248,6 +263,15 @@ thead th {
 
 tbody tr:nth-child(even) { background: var(--surface-alt); }
 tbody tr:hover { background: var(--surface-soft); }
+tbody tr.is-urgent {
+  background: #5b1f2d;
+}
+tbody tr.is-urgent:hover {
+  background: #70303e;
+}
+tbody tr.is-urgent td:first-child {
+  border-left: 4px solid var(--danger);
+}
 
 .cell-primary {
   color: var(--text);
@@ -762,6 +786,12 @@ tr.is-checked { background: var(--surface-soft); }
 
 .tag.rel-good { border-color: #79b55a; color: #ddffd0; }
 .tag.rel-bad { border-color: #c97b7b; color: var(--danger); }
+.status-label.urgent,
+.tag.urgent-tag {
+  border-color: #ffb2b2;
+  color: #ffd6d6;
+  font-weight: 700;
+}
 
 .outcome-actions {
   display: flex;

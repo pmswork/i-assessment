@@ -47,7 +47,7 @@
       </thead>
       <tbody>
         {% for row in rows %}
-        <tr class="job-row">
+        <tr class="job-row {{ 'is-urgent' if row.is_urgent else '' }}">
           <td class="cell-primary"><a class="row-link" href="/jobs/{{ row.job.job_id }}">{{ row.job.job_id }}</a></td>
           <td>{{ row.job.date }} {{ row.job.start_time.strftime('%H:%M') }}-{{ row.job.end_time.strftime('%H:%M') }}</td>
           <td>{{ row.job.language }}{% if row.job.sworn_required %}<span class="tag sworn">sworn</span>{% endif %}</td>
@@ -69,7 +69,14 @@
               <a class="status-label assigned" href="/interpreters/{{ row.interpreter.interpreter_id }}">{{ row.interpreter.name }}</a>
               <span class="tag source-{{ row.source }}">{{ row.source }}</span>
             {% else %}
-              <span class="status-label unassigned">needs decision</span>
+              <span class="status-label unassigned {{ 'urgent' if row.is_urgent else '' }}">
+                {% if row.is_urgent %}urgent{% else %}needs decision{% endif %}
+              </span>
+              {% if row.is_urgent %}
+              <span class="tag urgent-tag">
+                {% if row.days_until < 0 %}overdue{% elif row.days_until == 0 %}today{% else %}{{ row.days_until }}d{% endif %}
+              </span>
+              {% endif %}
               {% if row.reasons_preview %}
               <ul class="reasons">
                 {% for r in row.reasons_preview %}<li>{{ r }}</li>{% endfor %}

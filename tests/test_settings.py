@@ -9,12 +9,16 @@ def test_defaults_are_returned_without_any_update():
     current = settings.get()
     assert current == settings.Settings()
     assert current.coverage_radius_km == 100.0
+    assert current.auto_assign_risk_level == 2
+    assert current.urgent_unassigned_days == 3
 
 
 def test_update_changes_only_the_given_fields():
-    settings.update(travel_buffer_min=30.0)
+    settings.update(travel_buffer_min=30.0, auto_assign_risk_level=1, urgent_unassigned_days=5)
     current = settings.get()
     assert current.travel_buffer_min == 30.0
+    assert current.auto_assign_risk_level == 1
+    assert current.urgent_unassigned_days == 5
     assert current.long_distance_km == settings.Settings().long_distance_km  # untouched
 
 
@@ -28,6 +32,11 @@ def test_update_rejects_values_below_the_field_minimum():
 def test_update_rejects_unknown_field():
     with pytest.raises(ValueError):
         settings.update(not_a_real_field=1.0)
+
+
+def test_update_rejects_unknown_auto_assign_risk_level():
+    with pytest.raises(ValueError):
+        settings.update(auto_assign_risk_level=9)
 
 
 def test_reset_restores_defaults():

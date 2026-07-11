@@ -1,7 +1,9 @@
 from datetime import time
 from pathlib import Path
 
-from app import reliability
+from dataclasses import replace
+
+from app import reliability, settings
 from app.data_loader import load_interpreters, load_jobs
 from app.models import BlacklistEntry
 from app.reliability import EventType
@@ -168,6 +170,52 @@ def test_run_auto_assignment_tags_the_assignment_source_as_auto():
     run_auto_assignment(store)
 
     assert store.assignment_source[job.job_id] == "auto"
+
+
+def test_careful_auto_assignment_leaves_warning_candidates_for_review():
+    settings.update(auto_assign_risk_level=0)
+    interpreter = make_interpreter(window=(time(4, 0), time(23, 0)))
+    job = make_job(modality="on-site", location=GRONINGEN)
+    store = PlanningStore(jobs=[job], interpreters=[interpreter])
+
+    run_auto_assignment(store)
+
+    assert job.job_id not in store.assignments
+    assert any("planner review" in reason for reason in store.unassigned_reasons[job.job_id])
+
+
+def test_balanced_auto_assignment_allows_interpreter_choice_warnings():
+    settings.update(auto_assign_risk_level=1)
+    interpreter = make_interpreter(window=(time(4, 0), time(23, 0)))
+    job = make_job(modality="on-site", location=GRONINGEN)
+    store = PlanningStore(jobs=[job], interpreters=[interpreter])
+
+    run_auto_assignment(store)
+
+    assert store.assignments[job.job_id] == interpreter.interpreter_id
+
+
+def test_balanced_auto_assignment_leaves_non_commute_warnings_for_review():
+    settings.update(auto_assign_risk_level=1)
+    interpreter = make_interpreter()
+    job = replace(make_job(), client="Rechtbank Rotterdam - zitting")
+    store = PlanningStore(jobs=[job], interpreters=[interpreter])
+
+    run_auto_assignment(store)
+
+    assert job.job_id not in store.assignments
+    assert any("planner review" in reason for reason in store.unassigned_reasons[job.job_id])
+
+
+def test_flexible_auto_assignment_allows_any_warning_candidate():
+    settings.update(auto_assign_risk_level=2)
+    interpreter = make_interpreter()
+    job = replace(make_job(), client="Rechtbank Rotterdam - zitting")
+    store = PlanningStore(jobs=[job], interpreters=[interpreter])
+
+    run_auto_assignment(store)
+
+    assert store.assignments[job.job_id] == interpreter.interpreter_id
 
 
 def test_auto_assignment_preserves_manual_assignment_on_rerun():

@@ -19,9 +19,16 @@ from __future__ import annotations
 from dataclasses import dataclass, fields, replace
 from typing import NamedTuple
 
+AUTO_ASSIGN_RISK_LEVELS = {
+    0: "Careful - only clean matches",
+    1: "Balanced - allow interpreter-choice warnings",
+    2: "Flexible - allow all warning-level matches",
+}
+
 
 @dataclass(frozen=True)
 class Settings:
+    auto_assign_risk_level: int = 2
     average_speed_kmh: float = 45.0
     fixed_overhead_min: float = 10.0
     travel_buffer_min: float = 15.0
@@ -29,18 +36,28 @@ class Settings:
     workload_imbalance_threshold_min: float = 120.0
     coverage_radius_km: float = 100.0
     coverage_bar_cap: int = 3
+    urgent_unassigned_days: int = 3
 
 
 class FieldInfo(NamedTuple):
     label: str
     help_text: str
     min_value: float
+    options: dict[int, str] | None = None
 
 
 # Human-readable labels/explanations for the settings form, and a sane
 # floor for validation (everything here is a positive, physically
 # meaningful quantity — zero or negative would be nonsensical).
 FIELD_INFO: dict[str, FieldInfo] = {
+    "auto_assign_risk_level": FieldInfo(
+        "Auto-assignment autonomy",
+        "How much judgement the system may use by itself. Careful leaves every warning for a planner; "
+        "Balanced may auto-assign warnings that are mainly up to the interpreter, such as long commute home; "
+        "Flexible may auto-assign any warning-level match.",
+        0.0,
+        AUTO_ASSIGN_RISK_LEVELS,
+    ),
     "average_speed_kmh": FieldInfo(
         "Average travel speed (km/h)",
         "Used to convert straight-line distance into an estimated travel time.",
@@ -78,6 +95,11 @@ FIELD_INFO: dict[str, FieldInfo] = {
         'Number of nearby interpreters that reads as "full" on the Coverage gauge.',
         1.0,
     ),
+    "urgent_unassigned_days": FieldInfo(
+        "Urgent unassigned threshold (days)",
+        "Unassigned jobs due within this many Amsterdam calendar days are highlighted in red on the overview.",
+        0.0,
+    ),
 }
 
 _current = Settings()
@@ -98,6 +120,15 @@ def update(**changes: float) -> Settings:
     for key, value in changes.items():
         if key not in FIELD_INFO:
             raise ValueError(f"Unknown setting: {key}")
+        if key == "auto_assign_risk_level":
+            value = int(value)
+            changes[key] = value
+            if value not in AUTO_ASSIGN_RISK_LEVELS:
+                raise ValueError("Auto-assignment autonomy must be one of the listed options.")
+            continue
+        if key in ("coverage_bar_cap", "urgent_unassigned_days"):
+            value = int(value)
+            changes[key] = value
         if value < FIELD_INFO[key].min_value:
             raise ValueError(
                 f"{FIELD_INFO[key].label} must be at least {FIELD_INFO[key].min_value}, got {value}."

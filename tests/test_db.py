@@ -106,12 +106,27 @@ def test_explicit_db_path_overrides_the_default(tmp_path):
 
 
 def test_settings_round_trip():
-    custom = settings.Settings(coverage_radius_km=75.0, coverage_bar_cap=5)
+    custom = settings.Settings(auto_assign_risk_level=1, coverage_radius_km=75.0, coverage_bar_cap=5)
 
     db.save_settings(custom)
     loaded = db.load_settings()
 
     assert loaded == custom
+
+
+def test_load_settings_fills_new_fields_from_defaults_when_database_is_older():
+    custom = settings.Settings(coverage_radius_km=75.0, coverage_bar_cap=5)
+    db.save_settings(custom)
+    with db._connection(None) as conn:
+        conn.execute("DELETE FROM settings WHERE key = 'auto_assign_risk_level'")
+        conn.execute("DELETE FROM settings WHERE key = 'urgent_unassigned_days'")
+
+    loaded = db.load_settings()
+
+    assert loaded is not None
+    assert loaded.coverage_radius_km == 75.0
+    assert loaded.auto_assign_risk_level == settings.Settings().auto_assign_risk_level
+    assert loaded.urgent_unassigned_days == settings.Settings().urgent_unassigned_days
 
 
 def test_load_settings_returns_none_when_table_is_empty():

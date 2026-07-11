@@ -71,6 +71,33 @@ def _candidate_sort_key(job: Job, interpreter: Interpreter, status: ValidationSt
     )
 
 
+def _is_interpreter_choice_warning(reason: str) -> bool:
+    lower = reason.lower()
+    return lower.startswith("tight commute") or "long one-way distance" in lower
+
+
+def _auto_assignment_allows(result: ValidationResult) -> bool:
+    if result.status == ValidationStatus.ACCEPTED:
+        return True
+    if result.status == ValidationStatus.REJECTED:
+        return False
+
+    risk_level = settings.get().auto_assign_risk_level
+    if risk_level <= 0:
+        return False
+    if risk_level >= 2:
+        return True
+    return bool(result.reasons) and all(_is_interpreter_choice_warning(reason) for reason in result.reasons)
+
+
+def _warning_needs_decision(job: Job, interpreter: Interpreter, result: ValidationResult) -> list[str]:
+    return [
+        f"{interpreter.name} is possible for {job.job_id}, but auto-assignment autonomy requires planner review: "
+        f"{reason}"
+        for reason in result.reasons
+    ] or [f"{interpreter.name} is possible for {job.job_id}, but needs planner review before assignment."]
+
+
 def _explain_unassigned(job: Job, store: PlanningStore) -> list[str]:
     """Why couldn't this job be placed? Named interpreters, named numbers —
     never a generic "unavailable" summary.
@@ -142,7 +169,7 @@ def _explain_unassigned_with_coverage(job: Job, store: PlanningStore) -> list[st
     return reasons
 
 
-def best_candidate_for(job: Job, store: PlanningStore):
+def best_candidate_for(job: Job, store: PlanningStore, *, respect_auto_policy: bool = False):
     """The single best ACCEPTED/WARNING candidate for `job` right now, by the
     same ranking `run_auto_assignment` uses — without assigning anything.
 
@@ -163,6 +190,8 @@ def best_candidate_for(job: Job, store: PlanningStore):
             job, interpreter, schedule, all_interpreters=interpreters, workload_lookup=store
         )
         if result.status == ValidationStatus.REJECTED:
+            continue
+        if respect_auto_policy and not _auto_assignment_allows(result):
             continue
         key = _candidate_sort_key(job, interpreter, result.status, store)
         if best_key is None or key < best_key:
@@ -222,9 +251,14 @@ def run_auto_assignment(store: PlanningStore, *, preserve_manual: bool = True) -
             continue
         if store.assignment_source.get(job.job_id) == "manual":
             continue
-        best = best_candidate_for(job, store)
+        best = best_candidate_for(job, store, respect_auto_policy=True)
         if best is None:
-            store.mark_unassigned(job.job_id, _explain_unassigned_with_coverage(job, store))
+            review_candidate = best_candidate_for(job, store)
+            if review_candidate is not None and review_candidate[1].status == ValidationStatus.WARNING:
+                interpreter, result = review_candidate
+                store.mark_unassigned(job.job_id, _warning_needs_decision(job, interpreter, result))
+            else:
+                store.mark_unassigned(job.job_id, _explain_unassigned_with_coverage(job, store))
         else:
             interpreter, _result = best
             store.assign(job.job_id, interpreter.interpreter_id, source="auto")

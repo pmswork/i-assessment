@@ -339,10 +339,12 @@ def load_settings(db_path: Path | None = None) -> settings_module.Settings | Non
         rows = conn.execute("SELECT key, value FROM settings").fetchall()
 
     values = dict(rows)
-    field_names = settings_module.field_names()
-    if not all(name in values for name in field_names):
+    if not values:
         return None
 
-    kwargs = dict(values)
+    defaults = settings_module.Settings()
+    kwargs = {name: values.get(name, getattr(defaults, name)) for name in settings_module.field_names()}
+    kwargs["auto_assign_risk_level"] = int(kwargs["auto_assign_risk_level"])
     kwargs["coverage_bar_cap"] = int(kwargs["coverage_bar_cap"])
+    kwargs["urgent_unassigned_days"] = int(kwargs["urgent_unassigned_days"])
     return settings_module.Settings(**kwargs)

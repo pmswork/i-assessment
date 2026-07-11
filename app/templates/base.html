@@ -37,10 +37,35 @@
     </aside>
 
     <div class="shell-main">
+      <div class="app-clock" aria-label="Current date and time in Amstelveen">
+        <span id="amstelveen-clock">Amstelveen time</span>
+      </div>
       <main class="page">
         {% block content %}{% endblock %}
       </main>
     </div>
   </div>
+  <script>
+    function updateAmstelveenClock() {
+      var now = new Date();
+      var date = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Amsterdam",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }).format(now);
+      var time = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Amsterdam",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }).format(now);
+      var target = document.getElementById("amstelveen-clock");
+      if (target) target.textContent = date + ", " + time;
+    }
+    updateAmstelveenClock();
+    setInterval(updateAmstelveenClock, 1000);
+  </script>
 </body>
 </html>

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import PlainTextResponse, RedirectResponse
@@ -74,13 +75,27 @@ db_module.save_settings(settings_module.get())  # ensure the settings table alwa
 
 
 _REASONS_PREVIEW_COUNT = 2
+try:
+    AMSTELVEEN_TZ = ZoneInfo("Europe/Amsterdam")
+except ZoneInfoNotFoundError:
+    AMSTELVEEN_TZ = None
 
 
-def _job_row(job):
+def _amstelveen_today():
+    if AMSTELVEEN_TZ is None:
+        return datetime.now().date()
+    return datetime.now(AMSTELVEEN_TZ).date()
+
+
+def _job_row(job, today=None):
+    if today is None:
+        today = _amstelveen_today()
     interpreter = store.assigned_interpreter(job.job_id)
     stats = coverage_stats(job, list(store.interpreters.values()))
     gauge = coverage_gauge(stats)
     reasons = store.unassigned_reasons.get(job.job_id, [])
+    days_until = (job.date - today).days
+    is_urgent = interpreter is None and days_until <= settings_module.get().urgent_unassigned_days
     return {
         "job": job,
         "interpreter": interpreter,
@@ -90,12 +105,15 @@ def _job_row(job):
         "coverage_label": coverage_label(stats),
         "coverage_gauge": gauge,
         "coverage_within": stats.within_radius,
+        "days_until": days_until,
+        "is_urgent": is_urgent,
     }
 
 
 @app.get("/")
 def index(request: Request, status: str = "all", sort: str = "date"):
-    rows = [_job_row(j) for j in store.jobs_sorted()]
+    today = _amstelveen_today()
+    rows = [_job_row(j, today=today) for j in store.jobs_sorted()]
     assigned_count = sum(1 for r in rows if r["interpreter"] is not None)
     unassigned_count = len(rows) - assigned_count
 
@@ -130,6 +148,7 @@ def index(request: Request, status: str = "all", sort: str = "date"):
             "status_filter": status,
             "sort": sort,
             "coverage_radius_km": settings_module.get().coverage_radius_km,
+            "urgent_unassigned_days": settings_module.get().urgent_unassigned_days,
         },
     )
 
@@ -382,6 +401,7 @@ def _settings_fields(error: str | None = None):
                 "value": getattr(current, name),
                 "label": settings_module.FIELD_INFO[name].label,
                 "help_text": settings_module.FIELD_INFO[name].help_text,
+                "options": settings_module.FIELD_INFO[name].options,
             }
             for name in settings_module.field_names()
         ],
@@ -397,6 +417,7 @@ def settings_page(request: Request, saved: bool = False):
 @app.post("/settings")
 def update_settings(
     request: Request,
+    auto_assign_risk_level: int = Form(...),
     average_speed_kmh: float = Form(...),
     fixed_overhead_min: float = Form(...),
     travel_buffer_min: float = Form(...),
@@ -404,9 +425,11 @@ def update_settings(
     workload_imbalance_threshold_min: float = Form(...),
     coverage_radius_km: float = Form(...),
     coverage_bar_cap: int = Form(...),
+    urgent_unassigned_days: int = Form(...),
 ):
     try:
         settings_module.update(
+            auto_assign_risk_level=auto_assign_risk_level,
             average_speed_kmh=average_speed_kmh,
             fixed_overhead_min=fixed_overhead_min,
             travel_buffer_min=travel_buffer_min,
@@ -414,6 +437,7 @@ def update_settings(
             workload_imbalance_threshold_min=workload_imbalance_threshold_min,
             coverage_radius_km=coverage_radius_km,
             coverage_bar_cap=coverage_bar_cap,
+            urgent_unassigned_days=urgent_unassigned_days,
         )
     except ValueError as exc:
         return templates.TemplateResponse(
