@@ -291,3 +291,19 @@ def test_best_candidate_for_finds_a_warning_tier_option_without_assigning_it():
     assert best is not None
     assert best[0].interpreter_id == interpreter.interpreter_id
     assert job.job_id not in store.assignments  # purely informational, no side effect
+
+
+def test_auto_confirmed_assignments_survive_a_replan_like_manual_ones():
+    interpreter = make_interpreter()
+    job = make_job()
+    store = PlanningStore([job], [interpreter])
+    run_auto_assignment(store)
+    assert store.assignment_source[job.job_id] == "auto"
+
+    flipped = store.auto_confirm_provisional()
+    assert flipped == 1
+
+    run_auto_assignment(store)
+
+    assert store.assignments[job.job_id] == interpreter.interpreter_id
+    assert store.assignment_source[job.job_id] == "auto_confirmed"

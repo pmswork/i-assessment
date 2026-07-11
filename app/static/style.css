@@ -136,17 +136,12 @@ a:hover { text-decoration: underline; }
   padding: 3.1rem 1.3rem 1.3rem 1.25rem;
 }
 
+/* Plain text in the normal document flow: scrolls with the page, no frame. */
 .app-clock {
-  position: fixed;
-  top: 0.85rem;
-  right: 1.2rem;
-  z-index: 30;
-  min-width: 245px;
-  padding: 0.35rem 0.55rem;
-  border: 1px solid var(--line);
-  background: var(--surface-alt);
-  color: #ffffff;
+  padding: 0.85rem 1.3rem 0;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
   text-align: right;
 }
 
@@ -730,6 +725,31 @@ button.danger-button:hover {
   margin-left: 0.35rem;
   border-color: #6a99ce;
   color: #d7e6ff;
+}
+
+.tag.source-auto_confirmed {
+  min-width: 0;
+  margin-left: 0.35rem;
+  border-color: #79b55a;
+  color: #ddffd0;
+}
+
+/* Status column: interpreter name on the left, status tag flush right —
+   one row, no wrapping between them. */
+.status-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 250px;
+}
+
+.status-cell .status-label { flex: 1 1 auto; }
+
+.status-cell .tag {
+  flex: 0 0 auto;
+  margin-left: 0;
+  white-space: nowrap;
 }
 
 /* "What do we have here" summary at the top of the job-detail page */

@@ -286,23 +286,23 @@ def _court_work_warnings(job: Job, interpreter: Interpreter, schedule: list[Job]
 
     warnings = [
         (
-            "Court hearing / rechtbankwerk (zitting = hearing): hearings can run longer than planned. "
-            f"Confirm {interpreter.name} has enough buffer after this job if the zitting overruns."
+            "Court hearing: hearings can run longer than planned. "
+            f"Confirm {interpreter.name} has enough buffer after this job if the hearing overruns."
         )
     ]
     prep_gap = _prep_gap_before(job, interpreter, schedule)
     if prep_gap is None:
         warnings.append(
-            f"Preparation time / voorbereidingstijd: confirm {interpreter.name} has reviewed the case material before the hearing."
+            f"Preparation time: confirm {interpreter.name} has reviewed the case material before the hearing."
         )
     elif prep_gap < 30:
         warnings.append(
-            f"Preparation time / voorbereidingstijd: only ~{round(prep_gap)} min is free before this hearing. "
+            f"Preparation time: only ~{round(prep_gap)} min is free before this hearing. "
             f"Ask {interpreter.name} if that is enough preparation time."
         )
     else:
         warnings.append(
-            f"Preparation time / voorbereidingstijd: ~{round(prep_gap)} min appears free before this hearing. "
+            f"Preparation time: ~{round(prep_gap)} min appears free before this hearing. "
             f"Confirm with {interpreter.name} that this is enough."
         )
     return warnings

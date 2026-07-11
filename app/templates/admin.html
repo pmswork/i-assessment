@@ -26,11 +26,18 @@
       </form>
       <a class="button-link secondary" href="/admin/export/jobs.csv">Export jobs.csv</a>
       <a class="button-link" href="/admin/jobs/new">+ Add job</a>
+      <form method="post" action="/admin/auto-confirm" class="inline"
+            onsubmit="return confirm('Confirm all provisional assignments on behalf of the interpreters? They become planner-owned: auto-assignment re-runs will no longer move them.');">
+        <button type="submit" class="secondary">Auto-confirm all provisional</button>
+      </form>
       <form method="post" action="/admin/jobs/delete-all" class="inline"
             onsubmit="return confirm('Delete all jobs? This also clears all assignments and unassigned reasons.');">
         <button type="submit" class="danger-button">Delete all jobs</button>
       </form>
     </div>
+    <p class="muted">“Auto-confirm all provisional” marks every system-proposed assignment as confirmed on behalf of
+      the interpreters (tag: auto-confirmed) — useful for demos and for wholesale schedule confirmation. It records no
+      individual reliability events, since nobody personally said yes.</p>
     {% if job_import_errors %}
     <div class="result-box rejected">
       <span class="result-state">import rejected</span>

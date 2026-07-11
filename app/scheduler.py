@@ -41,7 +41,7 @@ from .rules import (
     total_added_travel_minutes,
     validate_assignment,
 )
-from .store import PlanningStore
+from .store import PLANNER_OWNED_SOURCES, PlanningStore
 
 
 def _job_sort_key(job: Job, interpreters: list[Interpreter]):
@@ -203,7 +203,7 @@ def best_candidate_for(job: Job, store: PlanningStore, *, respect_auto_policy: b
 def _manual_assignment_rejection(job: Job, interpreter: Interpreter, result: ValidationResult) -> list[str]:
     reasons = result.reasons or ["Manual assignment failed validation."]
     return [
-        f"Manual assignment to {interpreter.name} was not overwritten by auto-assignment, "
+        f"Confirmed assignment to {interpreter.name} was not overwritten by auto-assignment, "
         f"but it is no longer valid: {reason}"
         for reason in reasons
     ]
@@ -226,7 +226,7 @@ def run_auto_assignment(store: PlanningStore, *, preserve_manual: bool = True) -
 
     if preserve_manual:
         for job_id, interpreter_id in list(store.assignments.items()):
-            if store.assignment_source.get(job_id) != "manual":
+            if store.assignment_source.get(job_id) not in PLANNER_OWNED_SOURCES:
                 continue
             job = store.jobs.get(job_id)
             interpreter = store.interpreters.get(interpreter_id)
@@ -249,7 +249,7 @@ def run_auto_assignment(store: PlanningStore, *, preserve_manual: bool = True) -
     for job in jobs:
         if job.job_id in invalid_manual_job_ids:
             continue
-        if store.assignment_source.get(job.job_id) == "manual":
+        if store.assignment_source.get(job.job_id) in PLANNER_OWNED_SOURCES:
             continue
         best = best_candidate_for(job, store, respect_auto_policy=True)
         if best is None:

@@ -97,7 +97,7 @@ CREATE INDEX IF NOT EXISTS idx_jobs_language ON jobs(language);
 CREATE TABLE IF NOT EXISTS assignments (
     job_id TEXT PRIMARY KEY REFERENCES jobs(job_id) ON DELETE CASCADE,
     interpreter_id TEXT NOT NULL REFERENCES interpreters(interpreter_id) ON DELETE CASCADE,
-    source TEXT NOT NULL CHECK (source IN ('auto', 'manual'))
+    source TEXT NOT NULL CHECK (source IN ('auto', 'auto_confirmed', 'manual'))
 );
 CREATE INDEX IF NOT EXISTS idx_assignments_interpreter ON assignments(interpreter_id);
 
@@ -153,19 +153,56 @@ def _connection(db_path: Path | None):
     conn.execute("PRAGMA foreign_keys = ON")
     try:
         conn.executescript(_SCHEMA_SQL)
+        _migrate_assignments_source_check(conn)
         yield conn
         conn.commit()
     finally:
         conn.close()
 
 
+def _migrate_assignments_source_check(conn: sqlite3.Connection) -> None:
+    """One-off migration: databases created before the 'auto_confirmed'
+    source existed carry a CHECK (source IN ('auto', 'manual')) constraint
+    that would reject the new value on insert. `CREATE TABLE IF NOT EXISTS`
+    never alters an existing table, so rebuild it once. SQLite can't ALTER
+    a CHECK constraint in place — rename, recreate, copy, drop is the
+    documented pattern."""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'assignments'"
+    ).fetchone()
+    if row is None or "auto_confirmed" in row[0]:
+        return
+    conn.executescript(
+        """
+        ALTER TABLE assignments RENAME TO assignments_legacy;
+        CREATE TABLE assignments (
+            job_id TEXT PRIMARY KEY REFERENCES jobs(job_id) ON DELETE CASCADE,
+            interpreter_id TEXT NOT NULL REFERENCES interpreters(interpreter_id) ON DELETE CASCADE,
+            source TEXT NOT NULL CHECK (source IN ('auto', 'auto_confirmed', 'manual'))
+        );
+        INSERT INTO assignments (job_id, interpreter_id, source)
+            SELECT job_id, interpreter_id, source FROM assignments_legacy;
+        DROP TABLE assignments_legacy;
+        CREATE INDEX IF NOT EXISTS idx_assignments_interpreter ON assignments(interpreter_id);
+        """
+    )
+
+
 def has_data(db_path: Path | None = None) -> bool:
     """True once anything has been persisted — used at startup to decide
-    "load from the database" vs. "this is a first run, seed from the
-    CSVs"."""
+    "load from the database" vs. "this is a first run, seed from the CSVs".
+
+    Deliberately checks more than just the jobs table: the Admin tab has a
+    "delete all jobs" action, and if a planner uses it and then restarts,
+    an empty jobs table must NOT read as "first run" — that would silently
+    resurrect the deleted jobs from the CSVs. The settings table is written
+    on every successful startup, so any previously-initialized database
+    counts as having data even when the planner emptied it on purpose."""
     with _connection(db_path) as conn:
-        row = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()
-    return row[0] > 0
+        jobs = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+        interpreters = conn.execute("SELECT COUNT(*) FROM interpreters").fetchone()[0]
+        settings_rows = conn.execute("SELECT COUNT(*) FROM settings").fetchone()[0]
+    return jobs > 0 or interpreters > 0 or settings_rows > 0
 
 
 def load_interpreters(db_path: Path | None = None) -> list[Interpreter]:

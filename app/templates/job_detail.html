@@ -13,7 +13,15 @@
   <div class="situation__status">
     {% if current_interpreter %}
       Assigned to <a href="/interpreters/{{ current_interpreter.interpreter_id }}">{{ current_interpreter.name }}</a>
-      <span class="tag source-{{ current_source }}">{{ current_source }}</span> — no action needed.
+      {% if current_source == 'auto' %}
+      <span class="tag source-auto">provisional</span> — proposed by auto-assignment; confirm once the interpreter
+      has actually said yes.
+      {% elif current_source == 'auto_confirmed' %}
+      <span class="tag source-auto_confirmed">auto-confirmed</span> — confirmed in bulk on behalf of the
+      interpreter; treated exactly like a planner confirmation.
+      {% else %}
+      <span class="tag source-manual">confirmed</span> — no action needed.
+      {% endif %}
     {% else %}
       Needs a decision — the system could not place this job on its own.
     {% endif %}
@@ -21,7 +29,7 @@
 
   {% if not current_interpreter %}
     {% if reasons %}
-    <ul class="situation__reasons">{% for r in reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+    <ul class="situation__reasons">{% for r in reasons %}<li>{{ r|linkify }}</li>{% endfor %}</ul>
     {% endif %}
 
     {% if suggestion %}
@@ -29,7 +37,7 @@
       <strong>Suggested override:</strong>
       <a href="/interpreters/{{ suggestion.interpreter.interpreter_id }}">{{ suggestion.interpreter.name }}</a>
       <span class="tag {{ 'result-warning' if suggestion.result.status.value == 'warning' else 'result-ok' }}">{{ suggestion.result.status.value }}</span>
-      {% if suggestion.result.reasons %}— {{ suggestion.result.reasons[0] }}{% endif %}
+      {% if suggestion.result.reasons %}— {{ suggestion.result.reasons[0]|linkify }}{% endif %}
     </p>
     {% elif no_qualified_interpreters %}
     <p class="situation__suggestion">No interpreter on the roster meets the basic language/sworn requirement for
@@ -73,9 +81,19 @@
 
     <div class="panel-body">
       {% if current_interpreter %}
+      {% if current_source == 'auto' %}
+      <form method="post" action="/jobs/{{ job.job_id }}/confirm" class="inline">
+        <button type="submit">Confirm with interpreter</button>
+      </form>
+      {% endif %}
       <form method="post" action="/jobs/{{ job.job_id }}/unassign" class="inline">
         <button type="submit" class="secondary">Unassign</button>
       </form>
+      {% if current_source == 'auto' %}
+      <p class="muted">Provisional means the system proposed this match but nobody has spoken to
+        {{ current_interpreter.name }} yet. Confirming records their yes and locks the assignment: re-running
+        auto-assignment will replan provisional jobs, never confirmed ones.</p>
+      {% endif %}
 
       <div class="outcome-actions">
         <span class="muted">Record outcome:</span>
@@ -158,7 +176,7 @@
       <div class="result-box {{ result.status.value }}">
         <span class="result-state">{{ result.status.value }}</span>
         {% if result.reasons %}
-        <ul>{% for r in result.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+        <ul>{% for r in result.reasons %}<li>{{ r|linkify }}</li>{% endfor %}</ul>
         {% else %}
         <p>No issues found.</p>
         {% endif %}

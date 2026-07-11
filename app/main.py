@@ -15,14 +15,17 @@ have here" summary rather than a blank form.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 
 from . import csv_io
 from . import db as db_module
@@ -74,6 +77,64 @@ store = _bootstrap_store()
 db_module.save_settings(settings_module.get())  # ensure the settings table always reflects the active values
 
 
+def _get_job_or_404(job_id: str) -> Job:
+    job = store.jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    return job
+
+
+def _get_interpreter_or_404(interpreter_id: str) -> Interpreter:
+    interpreter = store.interpreters.get(interpreter_id)
+    if interpreter is None:
+        raise HTTPException(status_code=404, detail=f"Interpreter {interpreter_id} not found")
+    return interpreter
+
+
+_JOB_TOKEN_RE = r"J[A-Za-z0-9-]+"
+
+
+def _linkify_references(text: str) -> Markup:
+    """Turn job ids and interpreter names inside a plain-text reason into
+    links to their detail pages, so a planner reading e.g. "Tight commute
+    home: after J045 (...), Oksana Kovalenko's working window ..." can jump
+    straight to the job or the interpreter being talked about.
+
+    Reasons stay plain strings everywhere in the business layer (rules.py /
+    scheduler.py never emit HTML); this is purely a presentation concern,
+    applied as a Jinja filter at render time. The text is HTML-escaped
+    FIRST, then only exact, currently-known job ids and interpreter names
+    are wrapped in <a> tags — an unknown token that merely looks like a job
+    id is left as text, and nothing user-controlled can smuggle markup in.
+    """
+    escaped = str(escape(text))
+    # Names are matched against their escaped form so a name containing an
+    # HTML-special character would still line up with the escaped text.
+    names_escaped = {str(escape(i.name)): i.interpreter_id for i in store.interpreters.values()}
+    name_parts = [re.escape(name) for name in sorted(names_escaped, key=len, reverse=True)]
+    pattern = "|".join([*name_parts, _JOB_TOKEN_RE]) if name_parts else _JOB_TOKEN_RE
+
+    def _replace(match: re.Match) -> str:
+        token = match.group(0)
+        interpreter_id = names_escaped.get(token)
+        if interpreter_id is not None:
+            return f'<a href="/interpreters/{quote(interpreter_id)}">{token}</a>'
+        if token in store.jobs:
+            return f'<a href="/jobs/{quote(token)}">{token}</a>'
+        return token
+
+    return Markup(re.sub(rf"\b(?:{pattern})\b", _replace, escaped))
+
+
+templates.env.filters["linkify"] = _linkify_references
+
+# Planner-facing labels for the assignment sources (see store.py for the
+# lifecycle). Registered as a filter so every template names them the same
+# way: {{ row.source|source_label }}.
+_SOURCE_LABELS = {"auto": "provisional", "auto_confirmed": "auto-confirmed", "manual": "confirmed"}
+templates.env.filters["source_label"] = lambda source: _SOURCE_LABELS.get(source, source)
+
+
 _REASONS_PREVIEW_COUNT = 2
 try:
     AMSTELVEEN_TZ = ZoneInfo("Europe/Amsterdam")
@@ -117,10 +178,17 @@ def index(request: Request, status: str = "all", sort: str = "date"):
     assigned_count = sum(1 for r in rows if r["interpreter"] is not None)
     unassigned_count = len(rows) - assigned_count
 
+    # Filter options mirror the actual statuses a row can have: needs
+    # decision (unassigned), provisional (auto), auto-confirmed, confirmed
+    # (manual). "confirmed" alone covers both planner-confirmed kinds.
     if status == "needs_decision":
         rows = [row for row in rows if row["interpreter"] is None]
-    elif status == "assigned":
-        rows = [row for row in rows if row["interpreter"] is not None]
+    elif status == "provisional":
+        rows = [row for row in rows if row["source"] == "auto"]
+    elif status == "auto_confirmed":
+        rows = [row for row in rows if row["source"] == "auto_confirmed"]
+    elif status == "confirmed":
+        rows = [row for row in rows if row["source"] in ("manual", "auto_confirmed")]
     else:
         status = "all"
 
@@ -197,9 +265,9 @@ def _planner_questions_for(result) -> list[str]:
             questions.append("Can you confirm this workload is still reasonable for the interpreter that day?")
         elif "long one-way distance" in lower:
             questions.append("Can you confirm the interpreter is willing to travel this distance for the appointment?")
-        elif "court hearing" in lower or "rechtbank" in lower or "zitting" in lower:
-            questions.append("Can you confirm the interpreter has enough buffer if the zitting/hearing runs longer than planned?")
-        elif "preparation" in lower or "voorbereiding" in lower:
+        elif "court hearing" in lower:
+            questions.append("Can you confirm the interpreter has enough buffer if the hearing runs longer than planned?")
+        elif "preparation" in lower:
             questions.append("Can you confirm the interpreter has enough preparation time before the hearing?")
 
     if not questions:
@@ -224,7 +292,7 @@ def _render_job_detail(
     checked_interpreter_id: str | None = None,
     result=None,
 ):
-    job = store.jobs[job_id]
+    job = _get_job_or_404(job_id)
     current = store.assigned_interpreter(job_id)
     reasons = store.unassigned_reasons.get(job_id, [])
     qualified = [i for i in store.interpreters_sorted() if is_qualified(job, i)]
@@ -258,8 +326,8 @@ def _render_job_detail(
 
 @app.post("/jobs/{job_id}/validate")
 def validate(request: Request, job_id: str, interpreter_id: str = Form(...)):
-    job = store.jobs[job_id]
-    interpreter = store.interpreters[interpreter_id]
+    job = _get_job_or_404(job_id)
+    interpreter = _get_interpreter_or_404(interpreter_id)
     schedule = store.schedule_for(interpreter_id, exclude_job_id=job_id)
     result = validate_assignment(
         job, interpreter, schedule, all_interpreters=list(store.interpreters.values()), workload_lookup=store
@@ -274,8 +342,8 @@ def assign(
     interpreter_id: str = Form(...),
     confirm_warning: str | None = Form(None),
 ):
-    job = store.jobs[job_id]
-    interpreter = store.interpreters[interpreter_id]
+    job = _get_job_or_404(job_id)
+    interpreter = _get_interpreter_or_404(interpreter_id)
     schedule = store.schedule_for(interpreter_id, exclude_job_id=job_id)
     result = validate_assignment(
         job, interpreter, schedule, all_interpreters=list(store.interpreters.values()), workload_lookup=store
@@ -289,13 +357,36 @@ def assign(
         return _render_job_detail(request, job_id, checked_interpreter_id=interpreter_id, result=result)
 
     store.assign(job_id, interpreter_id, source="manual")
+    store.persist_now()
     reliability.record_event(interpreter_id, job_id, EventType.ACCEPTED)
+    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+
+
+@app.post("/jobs/{job_id}/confirm")
+def confirm_assignment(job_id: str):
+    """Promote a provisional (auto) assignment to planner-confirmed.
+
+    Auto-assignment output is a *proposal* — in the real workflow nothing
+    is agreed with the interpreter until a planner has actually spoken to
+    them. Confirming records that the interpreter said yes: the assignment
+    is re-labelled "confirmed" (stored as source="manual", the same tier as
+    a hand-picked assignment), an ACCEPTED reliability event is logged, and
+    from then on re-running auto-assignment will never move it (only
+    provisional assignments get replanned — see scheduler.py)."""
+    _get_job_or_404(job_id)
+    interpreter_id = store.assignments.get(job_id)
+    if interpreter_id is not None and store.assignment_source.get(job_id) == "auto":
+        store.assign(job_id, interpreter_id, source="manual")
+        store.persist_now()
+        reliability.record_event(interpreter_id, job_id, EventType.ACCEPTED)
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
 @app.post("/jobs/{job_id}/unassign")
 def unassign(job_id: str):
+    _get_job_or_404(job_id)
     store.unassign(job_id)
+    store.persist_now()
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
@@ -311,6 +402,7 @@ def record_outcome(job_id: str, outcome: str = Form(...)):
     """Close the loop on a job that already happened: did the assigned
     interpreter actually complete it, no-show, or cancel late? This is what
     feeds the reliability score — see reliability.py."""
+    _get_job_or_404(job_id)
     interpreter_id = store.assignments.get(job_id)
     event_type = _OUTCOME_EVENTS.get(outcome)
     if interpreter_id is not None and event_type is not None:
@@ -320,7 +412,7 @@ def record_outcome(job_id: str, outcome: str = Form(...)):
 
 @app.get("/interpreters/{interpreter_id}")
 def interpreter_detail(request: Request, interpreter_id: str):
-    interpreter = store.interpreters[interpreter_id]
+    interpreter = _get_interpreter_or_404(interpreter_id)
     schedule = sorted(store.schedule_for(interpreter_id), key=lambda j: j.start_dt)
     rel = reliability.score(interpreter_id)
     events = reliability.events_for(interpreter_id)
@@ -347,8 +439,7 @@ def add_blacklist_entry(
     client: str = Form(""),
     reason: str = Form(""),
 ):
-    if interpreter_id not in store.interpreters:
-        return RedirectResponse("/interpreters", status_code=303)
+    _get_interpreter_or_404(interpreter_id)
     if scope not in ("global", "client"):
         return RedirectResponse(f"/interpreters/{interpreter_id}", status_code=303)
     client = client.strip()
@@ -488,6 +579,20 @@ def admin_dashboard(request: Request):
     )
 
 
+@app.post("/admin/auto-confirm")
+def admin_auto_confirm_provisional():
+    """Bulk-promote every provisional (auto) assignment to "auto-confirmed"
+    on behalf of the interpreters — for demos and for workflows where the
+    agency confirms schedules wholesale instead of calling each interpreter.
+    Auto-confirmed assignments become planner-owned (auto-assignment reruns
+    won't move them), but deliberately log NO reliability ACCEPTED events:
+    nobody individually said yes, and fabricating track record would skew
+    the ranking that reliability scores feed (see store.auto_confirm_provisional)."""
+    store.auto_confirm_provisional()
+    store.persist_now()
+    return RedirectResponse("/admin", status_code=303)
+
+
 @app.post("/admin/import/jobs")
 async def admin_import_jobs(file: UploadFile = File(...)):
     text = (await file.read()).decode("utf-8", errors="replace")
@@ -556,7 +661,7 @@ def admin_new_job_form(request: Request):
 def admin_edit_job_form(request: Request, job_id: str):
     return templates.TemplateResponse(
         request, "admin_job_form.html",
-        {"values": _job_values_from(store.jobs[job_id]), "is_new": False, "errors": []},
+        {"values": _job_values_from(_get_job_or_404(job_id)), "is_new": False, "errors": []},
     )
 
 
@@ -579,6 +684,10 @@ def _save_job_form(
 ):
     errors: list[str] = []
     job_id = job_id.strip()
+    if not is_new and job_id not in store.jobs:
+        # Editing something that no longer exists (deleted in another tab,
+        # or a hand-typed URL) must not quietly create a new job.
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     if not job_id:
         errors.append("Job ID is required.")
     elif is_new and job_id in store.jobs:
@@ -746,7 +855,8 @@ def admin_edit_interpreter_form(request: Request, interpreter_id: str):
     return templates.TemplateResponse(
         request, "admin_interpreter_form.html",
         {
-            "values": _interpreter_values_from(store.interpreters[interpreter_id]), "is_new": False, "errors": [],
+            "values": _interpreter_values_from(_get_interpreter_or_404(interpreter_id)),
+            "is_new": False, "errors": [],
             "day1": _AVAILABILITY_DAY1, "day2": _AVAILABILITY_DAY2,
         },
     )
@@ -788,6 +898,10 @@ def _save_interpreter_form(
 ):
     errors: list[str] = []
     interpreter_id = interpreter_id.strip()
+    if not is_new and interpreter_id not in store.interpreters:
+        # Same rule as jobs: editing a roster entry that no longer exists
+        # must not quietly create a new interpreter.
+        raise HTTPException(status_code=404, detail=f"Interpreter {interpreter_id} not found")
     if not interpreter_id:
         errors.append("Interpreter ID is required.")
     elif is_new and interpreter_id in store.interpreters:

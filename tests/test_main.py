@@ -208,9 +208,9 @@ def test_court_job_check_shows_court_and_preparation_questions():
     response = client.post("/jobs/J007/validate", data={"interpreter_id": "INT-06"})
 
     assert response.status_code == 200
-    assert "Court hearing" in response.text or "rechtbankwerk" in response.text
-    assert "zitting = hearing" in response.text
-    assert "preparation time" in response.text.lower() or "voorbereidingstijd" in response.text.lower()
+    assert "Court hearing" in response.text
+    assert "hearing overruns" in response.text
+    assert "preparation time" in response.text.lower()
     assert "enough buffer" in response.text
 
 
@@ -449,3 +449,151 @@ def test_admin_bulk_delete_jobs_and_interpreters_then_restore_csvs():
     restored = client.get("/admin")
     assert "J001" in restored.text
     assert "INT-01" in restored.text
+
+
+# ---------------------------------------------------------------------------
+# Unknown-id handling, provisional/confirmed lifecycle, linkified reasons
+# ---------------------------------------------------------------------------
+
+
+def test_unknown_job_and_interpreter_ids_return_404_not_500():
+    assert client.get("/jobs/J-DOES-NOT-EXIST").status_code == 404
+    assert client.get("/interpreters/INT-DOES-NOT-EXIST").status_code == 404
+    assert client.get("/admin/jobs/J-DOES-NOT-EXIST/edit").status_code == 404
+    assert client.get("/admin/interpreters/INT-DOES-NOT-EXIST/edit").status_code == 404
+    assert client.post("/jobs/J-DOES-NOT-EXIST/unassign").status_code == 404
+    assert client.post("/jobs/J-DOES-NOT-EXIST/outcome", data={"outcome": "completed"}).status_code == 404
+    assert client.post(
+        "/jobs/J001/validate", data={"interpreter_id": "INT-DOES-NOT-EXIST"}
+    ).status_code == 404
+
+
+def test_editing_a_deleted_job_does_not_quietly_create_it():
+    response = client.post(
+        "/admin/jobs/J-GONE/edit",
+        data={
+            "date": "2026-07-14", "start_time": "09:00", "end_time": "10:00",
+            "language": "Arabic", "modality": "remote", "client": "Test",
+            "address": "", "city": "", "lat": "", "lon": "",
+        },
+    )
+    assert response.status_code == 404
+    assert "J-GONE" not in client.get("/admin").text
+
+
+def test_auto_assignment_is_provisional_until_planner_confirms():
+    client.post("/auto-assign")  # baseline: J004 (remote Polish) is auto-assigned
+
+    detail = client.get("/jobs/J004")
+    assert "provisional" in detail.text
+    assert "Confirm with interpreter" in detail.text
+
+    confirm = client.post("/jobs/J004/confirm", follow_redirects=False)
+    assert confirm.status_code == 303
+
+    confirmed = client.get("/jobs/J004")
+    assert ">confirmed<" in confirmed.text
+    assert "Confirm with interpreter" not in confirmed.text
+
+    # A confirmed assignment is planner-owned: re-running auto-assignment
+    # must not move it.
+    interpreter_before = confirmed.text.split('Assigned to <a href="/interpreters/')[1].split('"')[0]
+    client.post("/auto-assign")
+    after = client.get("/jobs/J004")
+    assert f'Assigned to <a href="/interpreters/{interpreter_before}"' in after.text
+    assert ">confirmed<" in after.text
+
+    client.post("/jobs/J004/unassign")  # clean up for other tests
+    client.post("/auto-assign")
+
+
+def test_confirm_on_an_unassigned_job_is_a_safe_no_op():
+    client.post("/auto-assign")
+    client.post("/jobs/J013/unassign")  # J013 is unassignable (Polish sworn gap)
+
+    response = client.post("/jobs/J013/confirm", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert "Assigned to" not in client.get("/jobs/J013").text
+
+
+def test_unassigned_reasons_link_to_the_jobs_and_interpreters_they_mention():
+    client.post("/auto-assign")
+
+    detail = client.get("/jobs/J017")  # travel-infeasible: reasons name jobs + interpreters
+
+    assert 'href="/interpreters/INT-01">Amira El-Sayed</a>' in detail.text
+    assert 'href="/jobs/J012">J012</a>' in detail.text
+
+
+# ---------------------------------------------------------------------------
+# Bulk auto-confirm ("on behalf of interpreters") and status filters
+# ---------------------------------------------------------------------------
+
+
+def _reset_to_provisional_baseline():
+    """Auto-confirmed assignments are planner-owned *by design*, so a plain
+    /auto-assign cannot revert them. Tests that promote assignments restore
+    the shared module-level store the hard way: wipe the jobs, re-import
+    the original CSV, replan — everything assigned is provisional again."""
+    from pathlib import Path
+
+    jobs_csv = (Path(__file__).resolve().parent.parent / "jobs.csv").read_bytes()
+    client.post("/admin/jobs/delete-all")
+    client.post("/admin/import/jobs", files={"file": ("jobs.csv", io.BytesIO(jobs_csv), "text/csv")})
+    client.post("/auto-assign")
+
+
+def test_admin_auto_confirm_promotes_all_provisional_assignments():
+    _reset_to_provisional_baseline()
+
+    response = client.post("/admin/auto-confirm", follow_redirects=False)
+    assert response.status_code == 303
+
+    board = client.get("/")
+    assert 'source-auto">provisional' not in board.text  # provisional row tags all gone
+    assert 'source-auto_confirmed">auto-confirmed' in board.text
+
+    # Auto-confirmed assignments are planner-owned: a re-run must not move them.
+    detail_before = client.get("/jobs/J001")
+    interpreter_before = detail_before.text.split('Assigned to <a href="/interpreters/')[1].split('"')[0]
+    client.post("/auto-assign")
+    detail_after = client.get("/jobs/J001")
+    assert f'Assigned to <a href="/interpreters/{interpreter_before}"' in detail_after.text
+    assert "auto-confirmed" in detail_after.text
+    # No "Confirm with interpreter" button: it is already confirmed-tier.
+    assert "Confirm with interpreter" not in detail_after.text
+
+    _reset_to_provisional_baseline()
+
+
+def test_bulk_auto_confirm_records_no_reliability_events():
+    _reset_to_provisional_baseline()
+    profile_before = client.get("/interpreters/INT-08").text
+
+    client.post("/admin/auto-confirm")
+
+    profile_after = client.get("/interpreters/INT-08").text
+    # The reliability panel is unchanged: no fabricated ACCEPTED events.
+    assert profile_before.count("accepted") == profile_after.count("accepted")
+
+    _reset_to_provisional_baseline()
+
+
+def test_status_filter_matches_the_real_statuses():
+    _reset_to_provisional_baseline()
+
+    provisional = client.get("/?status=provisional")
+    assert 'source-auto">provisional' in provisional.text
+    assert 'source-auto_confirmed">' not in provisional.text
+
+    confirmed_empty = client.get("/?status=confirmed")
+    assert "0 shown" in confirmed_empty.text
+
+    client.post("/admin/auto-confirm")
+    auto_confirmed = client.get("/?status=auto_confirmed")
+    assert 'source-auto_confirmed">auto-confirmed' in auto_confirmed.text
+    confirmed_any = client.get("/?status=confirmed")
+    assert 'source-auto_confirmed">auto-confirmed' in confirmed_any.text
+
+    _reset_to_provisional_baseline()

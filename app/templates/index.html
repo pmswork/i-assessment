@@ -25,7 +25,9 @@
       <select name="status" aria-label="Status filter">
         <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>All jobs</option>
         <option value="needs_decision" {{ 'selected' if status_filter == 'needs_decision' else '' }}>Needs decision</option>
-        <option value="assigned" {{ 'selected' if status_filter == 'assigned' else '' }}>Assigned</option>
+        <option value="provisional" {{ 'selected' if status_filter == 'provisional' else '' }}>Provisional</option>
+        <option value="auto_confirmed" {{ 'selected' if status_filter == 'auto_confirmed' else '' }}>Auto-confirmed</option>
+        <option value="confirmed" {{ 'selected' if status_filter == 'confirmed' else '' }}>Confirmed (any)</option>
       </select>
       <button type="submit" class="secondary">Filter</button>
     </form>
@@ -66,20 +68,24 @@
           </td>
           <td>
             {% if row.interpreter %}
-              <a class="status-label assigned" href="/interpreters/{{ row.interpreter.interpreter_id }}">{{ row.interpreter.name }}</a>
-              <span class="tag source-{{ row.source }}">{{ row.source }}</span>
+              <div class="status-cell">
+                <a class="status-label assigned" href="/interpreters/{{ row.interpreter.interpreter_id }}">{{ row.interpreter.name }}</a>
+                <span class="tag source-{{ row.source }}">{{ row.source|source_label }}</span>
+              </div>
             {% else %}
-              <span class="status-label unassigned {{ 'urgent' if row.is_urgent else '' }}">
-                {% if row.is_urgent %}urgent{% else %}needs decision{% endif %}
-              </span>
-              {% if row.is_urgent %}
-              <span class="tag urgent-tag">
-                {% if row.days_until < 0 %}overdue{% elif row.days_until == 0 %}today{% else %}{{ row.days_until }}d{% endif %}
-              </span>
-              {% endif %}
+              <div class="status-cell">
+                <span class="status-label unassigned {{ 'urgent' if row.is_urgent else '' }}">
+                  {% if row.is_urgent %}urgent{% else %}needs decision{% endif %}
+                </span>
+                {% if row.is_urgent %}
+                <span class="tag urgent-tag">
+                  {% if row.days_until < 0 %}overdue{% elif row.days_until == 0 %}today{% else %}{{ row.days_until }}d{% endif %}
+                </span>
+                {% endif %}
+              </div>
               {% if row.reasons_preview %}
               <ul class="reasons">
-                {% for r in row.reasons_preview %}<li>{{ r }}</li>{% endfor %}
+                {% for r in row.reasons_preview %}<li>{{ r|linkify }}</li>{% endfor %}
                 {% if row.reasons_more_count %}<li>+{{ row.reasons_more_count }} more — open for details</li>{% endif %}
               </ul>
               {% endif %}

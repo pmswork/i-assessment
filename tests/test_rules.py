@@ -163,8 +163,8 @@ def test_court_work_warns_about_overrun_and_preparation_time():
     result = validate_assignment(job, interpreter, schedule=[])
 
     assert result.status == ValidationStatus.WARNING
-    assert any("rechtbankwerk" in r.lower() or "court hearing" in r.lower() for r in result.reasons)
-    assert any("voorbereidingstijd" in r.lower() or "preparation time" in r.lower() for r in result.reasons)
+    assert any("court hearing" in r.lower() for r in result.reasons)
+    assert any("preparation time" in r.lower() for r in result.reasons)
 
 
 def test_court_preparation_warning_mentions_short_gap():

@@ -31,7 +31,7 @@ J029,2026-07-14,13:15,Arabic,False,remote,assigned,INT-02,Karim Haddad,
 J030,2026-07-14,13:20,Turkish,False,on-site,assigned,INT-06,Emre Yilmaz,
 J031,2026-07-14,13:25,Turkish,False,remote,assigned,INT-07,Selin Demir,
 J032,2026-07-14,13:30,Polish,False,on-site,assigned,INT-08,Piotr Nowak,
-J033,2026-07-14,14:00,Polish,False,on-site,unassigned,,,"Piotr Nowak is already booked on J032 (13:30–15:00), which overlaps this job. | No qualified Polish interpreter lives within 50 km (straight-line) of this job — all 1 qualified interpreter(s) on the roster are further away, so travel time is a likely contributing factor."
+J033,2026-07-14,14:00,Polish,False,on-site,unassigned,,,"Piotr Nowak is already booked on J032 (13:30–15:00), which overlaps this job."
 J034,2026-07-14,14:00,Arabic,False,remote,assigned,INT-02,Karim Haddad,
 J035,2026-07-14,14:00,Arabic,False,remote,assigned,INT-03,Layla Nasser,
 J036,2026-07-14,14:10,Arabic,False,on-site,assigned,INT-01,Amira El-Sayed,
@@ -63,7 +63,7 @@ J061,2026-07-15,08:30,Arabic,False,on-site,assigned,INT-01,Amira El-Sayed,
 J062,2026-07-15,08:30,Turkish,False,on-site,unassigned,,,"Not enough travel time for Emre Yilmaz between home (Rotterdam) and J062 (Eindhoven, 08:30–09:30): needs ~127 min, only 30 min available. | Selin Demir is already booked on J059 (08:15–08:45), which overlaps this job."
 J063,2026-07-15,08:45,Arabic,False,on-site,assigned,INT-03,Layla Nasser,
 J064,2026-07-15,09:00,Ukrainian,False,on-site,assigned,INT-05,Dmytro Bondar,
-J065,2026-07-15,09:00,Turkish,False,on-site,unassigned,,,"Not enough travel time for Emre Yilmaz between home (Rotterdam) and J065 (Maastricht, 09:00–10:00): needs ~204 min, only 60 min available. | Not enough travel time for Selin Demir between home (Eindhoven) and J065 (Maastricht, 09:00–10:00): needs ~99 min, only 60 min available. | No qualified Turkish interpreter lives within 50 km (straight-line) of this job — all 2 qualified interpreter(s) on the roster are further away, so travel time is a likely contributing factor."
+J065,2026-07-15,09:00,Turkish,False,on-site,unassigned,,,"Not enough travel time for Emre Yilmaz between home (Rotterdam) and J065 (Maastricht, 09:00–10:00): needs ~204 min, only 60 min available. | Not enough travel time for Selin Demir between home (Eindhoven) and J065 (Maastricht, 09:00–10:00): needs ~99 min, only 60 min available."
 J066,2026-07-15,09:10,Polish,False,on-site,assigned,INT-08,Piotr Nowak,
 J067,2026-07-15,09:10,Turkish,False,remote,assigned,INT-07,Selin Demir,
 J068,2026-07-15,09:25,Arabic,False,on-site,assigned,INT-02,Karim Haddad,
@@ -80,7 +80,7 @@ J078,2026-07-15,11:15,Arabic,False,on-site,assigned,INT-01,Amira El-Sayed,
 J079,2026-07-15,11:15,Ukrainian,False,remote,assigned,INT-05,Dmytro Bondar,
 J080,2026-07-15,11:25,Turkish,False,on-site,assigned,INT-06,Emre Yilmaz,
 J081,2026-07-15,11:30,Ukrainian,False,on-site,unassigned,,,"Not enough travel time for Oksana Kovalenko between J072 (Amersfoort, 10:00–11:00) and J081 (Den Haag, 11:30–12:30): needs ~115 min, only 30 min available. | Dmytro Bondar is already booked on J079 (11:15–11:45), which overlaps this job."
-J082,2026-07-15,11:30,Arabic,False,on-site,unassigned,,,"Amira El-Sayed is already booked on J078 (11:15–11:45), which overlaps this job. | Karim Haddad is already booked on J074 (10:55–11:55), which overlaps this job. | Layla Nasser is already booked on J077 (11:10–11:40), which overlaps this job. | No qualified Arabic interpreter lives within 50 km (straight-line) of this job — all 3 qualified interpreter(s) on the roster are further away, so travel time is a likely contributing factor."
+J082,2026-07-15,11:30,Arabic,False,on-site,unassigned,,,"Amira El-Sayed is already booked on J078 (11:15–11:45), which overlaps this job. | Karim Haddad is already booked on J074 (10:55–11:55), which overlaps this job. | Layla Nasser is already booked on J077 (11:10–11:40), which overlaps this job. | No qualified Arabic interpreter lives within 100 km (straight-line) of this job — all 3 qualified interpreter(s) on the roster are further away, so travel time is a likely contributing factor."
 J083,2026-07-15,12:05,Ukrainian,False,remote,assigned,INT-05,Dmytro Bondar,
 J084,2026-07-15,12:10,Polish,False,on-site,assigned,INT-08,Piotr Nowak,
 J085,2026-07-15,12:10,Arabic,False,remote,assigned,INT-02,Karim Haddad,

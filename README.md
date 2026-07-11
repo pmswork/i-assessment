@@ -103,6 +103,25 @@ Everything below documents what was actually built: how to run it, how it's
 put together, the rules it enforces and why, and what was deliberately left
 out.
 
+**Deliverables checklist** (mapping to "Deliverables" in the brief above):
+
+1. **Runnable locally, a couple of shell commands** → "Quick start" below
+   (venv + pip install + uvicorn; no Docker needed, nothing exotic).
+2. **Auto-assignment output on the provided data** →
+   [`output/auto_assignment_result.csv`](output/auto_assignment_result.csv),
+   regenerable with `python run_auto_assignment.py`; the same schedule is
+   shown live on the web UI's home page.
+3. **Write-up: the rules and why** → "Assignment strategy", "Hard
+   constraints (reject, always)" and "Warnings (soft)" below.
+   **What I'd tackle next** → "What I'd build next with more time".
+   **Questionable/ambiguous data and how it was handled** → "Data I found
+   questionable" and "Assumptions and how ambiguity was resolved".
+
+There is also a planner-facing user manual with the ELAN logo at
+[`docs/ELAN_Planner_Manual.docx`](docs/ELAN_Planner_Manual.docx)
+(regenerate after UI changes with `python docs/generate_manual.py`;
+requires `pip install python-docx`, not a runtime dependency).
+
 ## Quick start
 
 Requires Python 3.11+ (built and tested on 3.12). No Node, no Docker, no
@@ -418,6 +437,7 @@ restart exactly like a manual assignment is.
 | 3 | Job time must fall entirely within the interpreter's stated availability window for that date | They told us when they work; scheduling outside it isn't something a planner can silently override. |
 | 4 | No overlapping jobs for the same interpreter | A person can't be in two appointments at once, on-site or remote. |
 | 5 | Travel between two of the interpreter's on-site jobs that day must physically fit in the gap | If the estimated drive time exceeds the gap, the assignment is not just risky, it's impossible. |
+| 6 | The interpreter must not be blacklisted for this job's client (or globally) | A blacklist entry records "do not send this person to this client" — a relationship/quality decision that scheduling must never override. Managed per interpreter on their profile page; adding one immediately unassigns any affected jobs, each with an explanatory reason. |
 
 Constraint 5 is evaluated on the interpreter's whole day, not just the pair
 being validated: on-site jobs are chained chronologically (skipping over
@@ -517,6 +537,50 @@ instead of, the concrete blocking reason (e.g. "already booked" or
 "outside working hours"), so a planner sees both the immediate cause and
 the underlying scarcity.
 
+## Assignment lifecycle: provisional → confirmed
+
+An auto-assignment is a *proposal*, not a promise: in the real workflow
+nothing is agreed until a planner (or an invitation flow — see "what I'd
+build next") has actually spoken to the interpreter. The UI makes that
+distinction explicit:
+
+- **provisional** — proposed by auto-assignment. Re-running auto-assignment
+  may replan it (better candidate freed up, settings changed, data edited).
+  The job page shows a "Confirm with interpreter" button.
+- **confirmed** — a planner confirmed the interpreter's yes (or assigned
+  them by hand, which implies the same phone call). Confirmed assignments
+  are planner-owned: auto-assignment never moves them. If later changes
+  make a confirmed assignment invalid (edited job time now overlaps another
+  booking, new blacklist entry, roster change), the system unassigns it
+  with an explicit reason rather than silently keeping a broken promise —
+  disruption to already-agreed planning is surfaced, never hidden.
+- **auto-confirmed** — the Admin tab's "Auto-confirm all provisional"
+  action promotes every provisional assignment at once, *on behalf of* the
+  interpreters (wholesale schedule confirmation, also handy in demos).
+  From then on it behaves exactly like confirmed — planner-owned, never
+  replanned — but keeps its own label so it stays visible that no one
+  individually said yes. It also records **no** reliability ACCEPTED
+  events, for the same reason: fabricated acceptances would pollute the
+  track record that auto-assignment ranks candidates by.
+
+The job-list status filter mirrors these states one-for-one: All /
+Needs decision / Provisional / Auto-confirmed / Confirmed (any).
+
+Confirming also logs an ACCEPTED reliability event, the same signal a
+manual assignment produces. This is a deliberately simplified version of
+the full real-world lifecycle (pending → invited → accepted → confirmed →
+completed); the invited/response-time stage is future work, and the
+`reliability_events.response_seconds` column already exists for it.
+
+Related knob: the **auto-assignment autonomy** setting (Settings tab)
+controls how much judgement the system may exercise alone — *Careful* only
+auto-assigns clean matches and leaves every warning to a planner;
+*Balanced* also auto-assigns warnings that are mainly the interpreter's own
+choice (long commute, long distance); *Flexible* auto-assigns any
+warning-level match. Whatever it can't decide itself is left unassigned
+with a "needs planner review" reason naming the candidate it would have
+picked.
+
 ## Manual assignment is the fallback, not the default path
 
 The product goal here is autonomy: auto-assignment should handle the large
@@ -566,6 +630,13 @@ job-detail page:
   planner sees exactly who was considered and exactly why each one didn't
   work, on both the job-detail page and (truncated to 2, with a "+N more"
   link) the job list.
+- **Job ids and interpreter names inside reason messages are clickable.**
+  Reading *"Karim Haddad is already booked on J008, which overlaps this
+  job"*, a planner can jump straight to J008 or to Karim's profile. This is
+  purely a render-time transform (a Jinja filter in `main.py`): the
+  business layer keeps emitting plain strings, the text is HTML-escaped
+  first, and only exact matches against *currently known* job ids and
+  roster names become links — nothing user-typed can smuggle in markup.
 
 ## Assumptions and how ambiguity was resolved
 

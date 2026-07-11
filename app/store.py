@@ -38,6 +38,19 @@ class UnassignedInfo:
     reasons: list[str]
 
 
+# Assignment sources, in lifecycle order:
+#   "auto"           — provisional: proposed by auto-assignment, nobody has
+#                      spoken to the interpreter; replanned freely.
+#   "auto_confirmed" — bulk-confirmed from the Admin tab "on behalf of the
+#                      interpreters" (no individual phone call); treated as
+#                      planner-owned from then on.
+#   "manual"         — confirmed: a planner assigned by hand or confirmed a
+#                      provisional proposal after the interpreter said yes.
+# Everything except "auto" is planner-owned: re-running auto-assignment
+# never moves it (see scheduler.run_auto_assignment).
+PLANNER_OWNED_SOURCES = ("manual", "auto_confirmed")
+
+
 class PlanningStore:
     def __init__(self, jobs: list[Job], interpreters: list[Interpreter], persist: bool = False):
         self.jobs: dict[str, Job] = {j.job_id: j for j in jobs}
@@ -126,10 +139,21 @@ class PlanningStore:
         ]
 
     def _clear_blacklisted_assignments(self, interpreter_id: str) -> None:
+        interpreter = self.interpreters.get(interpreter_id)
+        name = interpreter.name if interpreter is not None else interpreter_id
         for job_id, assigned_interpreter_id in list(self.assignments.items()):
             job = self.jobs.get(job_id)
             if assigned_interpreter_id == interpreter_id and job is not None and self.is_blacklisted(interpreter_id, job.client):
-                self.unassign(job_id)
+                # Leave an actionable reason, not a bare "needs decision":
+                # the planner opening this job should see WHY it suddenly
+                # lost its interpreter.
+                self.mark_unassigned(
+                    job_id,
+                    [
+                        f"{name} was unassigned because they are now blacklisted for {job.client}; "
+                        f"pick a replacement or re-run auto-assignment."
+                    ],
+                )
 
     # -- assignment mutation -----------------------------------------------------
 
@@ -159,6 +183,21 @@ class PlanningStore:
             self.assignments.pop(job_id, None)
             self.assignment_source.pop(job_id, None)
         self.unassigned_reasons.clear()
+
+    def auto_confirm_provisional(self) -> int:
+        """Flip every provisional (auto) assignment to auto_confirmed —
+        the Admin "confirm on behalf of interpreters" bulk action. Returns
+        how many assignments were flipped. Deliberately does NOT touch
+        reliability history: nobody actually said yes, so recording an
+        ACCEPTED event per job would fabricate track record (compare the
+        per-job confirm route in main.py, which does record it because it
+        represents a real conversation)."""
+        flipped = 0
+        for job_id, source in list(self.assignment_source.items()):
+            if source == "auto":
+                self.assignment_source[job_id] = "auto_confirmed"
+                flipped += 1
+        return flipped
 
     # -- roster/job mutation (admin) ---------------------------------------------
 

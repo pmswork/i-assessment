@@ -20,9 +20,25 @@ every test.
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from app import db, reliability, settings
+
+# Test *collection* runs before any fixture: importing tests/test_main.py
+# imports app.main, whose module-level bootstrap seeds a store, runs
+# auto-assignment, and persists — all against db.DEFAULT_DB_PATH as it is
+# at that moment. Repoint both databases at a session-scoped temp directory
+# right here, at conftest import time (pytest imports conftest before test
+# modules), so even that collection-time bootstrap can never create or
+# overwrite the real app.db / reliability.db a developer is using with the
+# live server. The per-test autouse fixtures below then give each test its
+# own fresh file on top of this.
+_COLLECTION_TMP = Path(tempfile.mkdtemp(prefix="elan-planner-tests-"))
+db.DEFAULT_DB_PATH = _COLLECTION_TMP / "app_collection.db"
+reliability.DEFAULT_DB_PATH = _COLLECTION_TMP / "reliability_collection.db"
 
 
 @pytest.fixture(autouse=True)
