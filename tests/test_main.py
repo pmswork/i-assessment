@@ -311,10 +311,17 @@ def test_admin_dashboard_loads_with_jobs_and_interpreters():
     assert response.status_code == 200
     assert "J001" in response.text
     assert "INT-01" in response.text
+    # Bulk delete is a plain LINK to a dedicated confirmation page — not an
+    # inline form. A link cannot be captured by the import form's required
+    # file input (the old failure mode where "Delete all" prompted for a
+    # CSV), so the formaction/formnovalidate workarounds are gone too.
     assert 'action="/admin/jobs/delete-all"' in response.text
     assert "Delete all jobs" in response.text
+    assert 'formaction="/admin/jobs/delete-all"' in response.text
+    assert "formnovalidate" in response.text
     assert 'action="/admin/interpreters/delete-all"' in response.text
     assert "Delete all interpreters" in response.text
+    assert 'formaction="/admin/interpreters/delete-all"' in response.text
 
 
 def test_admin_job_create_edit_delete_flow():
@@ -468,13 +475,19 @@ def test_admin_bulk_delete_jobs_and_interpreters_then_restore_csvs():
 
     delete_jobs = client.post("/admin/jobs/delete-all", follow_redirects=False)
     assert delete_jobs.status_code == 303
+    assert delete_jobs.headers["location"] == "/admin?deleted=jobs"
     dashboard = client.get("/admin")
     assert "J001" not in dashboard.text
+    dashboard = client.get("/admin?deleted=jobs")
+    assert "Deleted all jobs." in dashboard.text
 
     delete_interpreters = client.post("/admin/interpreters/delete-all", follow_redirects=False)
     assert delete_interpreters.status_code == 303
+    assert delete_interpreters.headers["location"] == "/admin?deleted=interpreters"
     dashboard = client.get("/admin")
     assert "INT-01" not in dashboard.text
+    dashboard = client.get("/admin?deleted=interpreters")
+    assert "Deleted all interpreters." in dashboard.text
 
     client.post(
         "/admin/import/interpreters",
@@ -636,4 +649,51 @@ def test_status_filter_matches_the_real_statuses():
     confirmed_any = client.get("/?status=confirmed")
     assert 'source-auto_confirmed">auto-confirmed' in confirmed_any.text
 
+    _reset_to_provisional_baseline()
+
+
+# ---------------------------------------------------------------------------
+# Bulk-delete actions
+# ---------------------------------------------------------------------------
+
+
+def test_delete_all_buttons_are_post_forms_not_file_inputs_or_links():
+    _reset_to_provisional_baseline()
+
+    dashboard = client.get("/admin")
+    assert 'href="/admin/jobs/delete-all"' not in dashboard.text
+    assert 'href="/admin/interpreters/delete-all"' not in dashboard.text
+    assert 'action="/admin/jobs/delete-all"' in dashboard.text
+    assert 'formaction="/admin/jobs/delete-all"' in dashboard.text
+    assert 'action="/admin/interpreters/delete-all"' in dashboard.text
+    assert 'formaction="/admin/interpreters/delete-all"' in dashboard.text
+    assert "formnovalidate" in dashboard.text
+    assert dashboard.headers["cache-control"] == "no-store"
+
+
+def test_bulk_delete_post_actually_deletes_everything():
+    _reset_to_provisional_baseline()
+
+    response = client.post("/admin/jobs/delete-all", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin?deleted=jobs"
+    dashboard = client.get(response.headers["location"])
+    assert "Deleted all jobs." in dashboard.text
+    assert ">J001<" not in dashboard.text
+
+    response = client.post("/admin/interpreters/delete-all", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin?deleted=interpreters"
+    dashboard = client.get(response.headers["location"])
+    assert "Deleted all interpreters." in dashboard.text
+    assert "INT-01" not in dashboard.text
+
+    # Restore the shared store for any test that runs after this one.
+    from pathlib import Path
+
+    interpreters_csv = (Path(__file__).resolve().parent.parent / "interpreters.csv").read_bytes()
+    client.post(
+        "/admin/import/interpreters",
+        files={"file": ("interpreters.csv", io.BytesIO(interpreters_csv), "text/csv")},
+    )
     _reset_to_provisional_baseline()

@@ -578,12 +578,16 @@ _AVAILABILITY_DAY2 = datetime.strptime(
 
 
 @app.get("/admin")
-def admin_dashboard(request: Request):
+def admin_dashboard(request: Request, deleted: str | None = None):
     jobs_rows = [{"job": j, "interpreter": store.assigned_interpreter(j.job_id)} for j in store.jobs_sorted()]
     interpreter_rows = [
         {"interpreter": i, "workload_min": store.workload_minutes(i.interpreter_id)}
         for i in store.interpreters_sorted()
     ]
+    delete_messages = {
+        "jobs": "Deleted all jobs.",
+        "interpreters": "Deleted all interpreters.",
+    }
     return templates.TemplateResponse(
         request,
         "admin.html",
@@ -592,7 +596,13 @@ def admin_dashboard(request: Request):
             "interpreter_rows": interpreter_rows,
             "job_import_errors": _import_feedback["jobs"],
             "interpreter_import_errors": _import_feedback["interpreters"],
+            "admin_notice": delete_messages.get(deleted),
         },
+        # The admin page is where destructive bulk actions live; a stale
+        # cached copy (old form markup, old buttons) is exactly how a click
+        # ends up doing something different from what's on screen. Never
+        # let the browser serve this page from cache.
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -825,7 +835,7 @@ def admin_update_job(
 def admin_delete_all_jobs():
     store.replace_jobs([])
     store.persist_now()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?deleted=jobs", status_code=303)
 
 
 @app.post("/admin/jobs/{job_id}/delete")
@@ -1047,7 +1057,7 @@ def admin_update_interpreter(
 def admin_delete_all_interpreters():
     store.replace_interpreters([])
     store.persist_now()
-    return RedirectResponse("/admin", status_code=303)
+    return RedirectResponse("/admin?deleted=interpreters", status_code=303)
 
 
 @app.post("/admin/interpreters/{interpreter_id}/delete")

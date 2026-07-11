@@ -11,6 +11,10 @@
   all a planner needs. Import replaces the whole list atomically: either every row validates or none of it is
   applied, with specific reasons either way.</p>
 
+{% if admin_notice %}
+<div class="result-box accepted"><span class="result-state">done</span><p>{{ admin_notice }}</p></div>
+{% endif %}
+
 <section class="panel">
   <div class="panel-heading"><h2>Jobs</h2></div>
   <div class="panel-body">
@@ -32,7 +36,7 @@
       </form>
       <form method="post" action="/admin/jobs/delete-all" class="inline"
             onsubmit="return confirm('Delete all jobs? This also clears all assignments and unassigned reasons.');">
-        <button type="submit" class="danger-button">Delete all jobs</button>
+        <button type="submit" class="danger-button" formmethod="post" formaction="/admin/jobs/delete-all" formnovalidate>Delete all jobs</button>
       </form>
     </div>
     <p class="muted">“Auto-confirm all provisional” marks every system-proposed assignment as confirmed on behalf of
@@ -91,7 +95,7 @@
       <a class="button-link" href="/admin/interpreters/new">+ Add interpreter</a>
       <form method="post" action="/admin/interpreters/delete-all" class="inline"
             onsubmit="return confirm('Delete all interpreters? Assigned jobs will need reassignment.');">
-        <button type="submit" class="danger-button">Delete all interpreters</button>
+        <button type="submit" class="danger-button" formmethod="post" formaction="/admin/interpreters/delete-all" formnovalidate>Delete all interpreters</button>
       </form>
     </div>
     {% if interpreter_import_errors %}
